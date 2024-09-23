@@ -4,6 +4,8 @@ plugins {
 	id 'org.springframework.boot' version '3.3.4'
 	id 'io.spring.dependency-management' version '1.1.6'
 	id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.25'
+	id 'org.jlleitschuh.gradle.ktlint' version '12.1.1'
+	id 'org.jetbrains.kotlinx.kover' version '0.9.0-RC'
 }
 
 group = 'com.example'
@@ -38,4 +40,21 @@ kotlin {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('installPreCommitHook') {
+	def hookFile = new File("$projectDir/pre-commit")
+	def hooksDir = new File("$projectDir/.git/hooks")
+
+	if(hooksDir.exists()){
+		def targetFile = new File(hooksDir, "pre-commit")
+		targetFile.withOutputStream { out ->
+			hookFile.withInputStream { inStream ->
+				out << inStream
+			}
+		}
+		println("Pre-commit hook installed.")
+	} else {
+		println("No .git/hooks directory found. Please initialize a git repository.")
+	}
 }
