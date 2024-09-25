@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: snippet-service-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"  # Usa el puerto 5432
+    environment:
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: snippet-service-db
+    volumes:
+      - ./data:/var/lib/postgresql/data
