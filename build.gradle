@@ -1,60 +1,61 @@
 plugins {
-	id 'org.jetbrains.kotlin.jvm' version '1.9.25'
-	id 'org.jetbrains.kotlin.plugin.spring' version '1.9.25'
-	id 'org.springframework.boot' version '3.3.4'
-	id 'io.spring.dependency-management' version '1.1.6'
-	id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.25'
-	id 'org.jlleitschuh.gradle.ktlint' version '12.1.1'
-	id 'org.jetbrains.kotlinx.kover' version '0.9.0-RC'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.25'
+    id 'org.jetbrains.kotlin.plugin.spring' version '1.9.25'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.25'
+    id 'org.jlleitschuh.gradle.ktlint' version '12.1.1'
+    id 'org.jetbrains.kotlinx.kover' version '0.9.0-RC'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-	implementation 'org.jetbrains.kotlin:kotlin-reflect'
-	runtimeOnly 'org.postgresql:postgresql'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-kotlin {
-	compilerOptions {
-		freeCompilerArgs.addAll '-Xjsr305=strict'
-	}
+tasks.withType(JavaCompile).configureEach {
+    options.forkOptions.executable = javaToolchains
+            .launcherFor {
+                languageVersion = JavaLanguageVersion.of(17)
+            }
+            .get()
+            .executablePath
+            .asFile
+            .absolutePath
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+test {
+    useJUnitPlatform()
 }
 
 tasks.register('installPreCommitHook') {
-	def hookFile = new File("$projectDir/pre-commit")
-	def hooksDir = new File("$projectDir/.git/hooks")
+    doLast {
+        def hookFile = new File("$projectDir/pre-commit")
+        def hooksDir = new File("$projectDir/.git/hooks")
 
-	if(hooksDir.exists()){
-		def targetFile = new File(hooksDir, "pre-commit")
-		targetFile.withOutputStream { out ->
-			hookFile.withInputStream { inStream ->
-				out << inStream
-			}
-		}
-		println("Pre-commit hook installed.")
-	} else {
-		println("No .git/hooks directory found. Please initialize a git repository.")
-	}
+        if (hooksDir.exists()) {
+            def targetFile = new File(hooksDir, "pre-commit")
+            targetFile.withOutputStream { out ->
+                hookFile.withInputStream { inStream ->
+                    inStream.copyTo(out)
+                }
+            }
+            println("Pre-commit hook installed.")
+        } else {
+            println("No .git/hooks directory found. Please initialize a git repository.")
+        }
+    }
 }
