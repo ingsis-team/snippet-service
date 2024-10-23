@@ -3,31 +3,36 @@ services:
     container_name: "snippet-api"
     build:
       context: .
-      dockerfile: Dockerfile
     ports:
-      - 8083:8080
+      - "8082:8080"
     environment:
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "snippet_db"
+      DB_HOST: "db"
+      DB_PORT: 5432
+    networks:
+      - printscript_network
     depends_on:
       - db
-      - redis
 
   db:
-    container_name: "snippet-db"
-    image: postgres:12
+    container_name: "snippet_db"
+    image: postgres:alpine
     ports:
-      - 5432:5432
+      - "5431:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "snippet_db"
+    volumes:
+      - snippet_db:/var/lib/postgresql/data
+    networks:
+      - snippet_network
 
-  redis:
-    container_name: "redis"
-    image: redis:6-alpine
-    ports:
-      - "6379:6379"
+volumes:
+  snippet_db:
+
+networks:
+  snippet_network:
+    external: true
