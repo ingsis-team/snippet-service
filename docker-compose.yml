@@ -4,7 +4,7 @@ services:
     build:
       context: .
     ports:
-      - "8082:8080"
+      - "8084:8080"
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
@@ -12,7 +12,7 @@ services:
       DB_HOST: "db"
       DB_PORT: 5432
     networks:
-      - printscript_network
+      - snippet_network
     depends_on:
       - db
 
@@ -27,8 +27,6 @@ services:
       POSTGRES_DB: "snippet_db"
     volumes:
       - snippet_db:/var/lib/postgresql/data
-    networks:
-      - snippet_network
 
 volumes:
   snippet_db:

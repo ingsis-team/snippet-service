@@ -1,14 +1,18 @@
-FROM gradle:8.5-jdk17 AS build
+FROM gradle:8.7.0-jdk17
 
+# Install PostgreSQL client
+USER root
+RUN apt-get update && apt-get install -y postgresql-client
+
+# Copy your project files
 COPY . /home/gradle/src
 WORKDIR /home/gradle/src
 
-# Ensure that the Java 17 toolchain is available
-RUN gradle clean assemble
+# Build the application
+RUN gradle assemble
 
-FROM amazoncorretto:17-alpine
+# Expose port
 EXPOSE 8080
-RUN mkdir /app
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/spring-boot-application.jar
 
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=production", "/app/spring-boot-application.jar"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "/home/gradle/src/build/libs/SnippetService-0.0.1-SNAPSHOT.jar"]
