@@ -1,18 +1,13 @@
-FROM gradle:8.7.0-jdk17
+FROM gradle:8.10.0-jdk-21-and-22 AS build
 
-# Install PostgreSQL client
-USER root
-RUN apt-get update && apt-get install -y postgresql-client
-
-# Copy your project files
 COPY . /home/gradle/src
 WORKDIR /home/gradle/src
 
-# Build the application
-RUN gradle assemble
+RUN gradle clean assemble
 
-# Expose port
+FROM openjdk:21-jdk-slim
 EXPOSE 8080
+RUN mkdir /app
+COPY --from=build /home/gradle/src/build/libs/*.jar /app/spring-boot-application.jar
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "/home/gradle/src/build/libs/SnippetService-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=production", "/app/spring-boot-application.jar"]
