@@ -86,15 +86,35 @@ docker-compose down --volumes
 
 ```plaintext
 ├── src/main/kotlin
-│   ├── snippet
-│   │   ├── SnippetServiceApplication.kt  # Main entry point of the application
-│   │   ├── controller                    # REST controllers
-│   │   ├── service                       # Business logic services
-│   │   └── repository                    # Data repositories for PostgreSQL
+│   └── snippet
+│       ├── SnippetServiceApplication.kt  # Main entry point of the application
+│       ├── clients
+│       ├── controllers                   # REST controllers
+│       ├── exceptions
+│       ├── model
+│       │   ├── dtos
+│       │   └── entities
+│       ├── repositories                  # Data repositories for PostgreSQL
+│       ├── security
+│       └── services                      # Business logic services
+│
 ├── docker-compose.yml                    # Docker Compose configuration
 ├── build.gradle.kts                      # Gradle build script
 └── README.md                             # This file
 ```
+
+## Clases
+
+- **Snippet:** define entidad snippet usando anotación @Entity que permite a Spring mapearlo a tabla en la db.
+- **SnippetController:** define endpoints y métodos HTTP, y llama a SnippetService para manejar la lógica en cada caso.
+- **SnippetService:** maneja lógica de operaciones necesarias, usando SnippetRepository y PermissionServiceClient.
+- **SnippetRepository:** interfaz que extiende de JpaRepository para facilitar operaciones CRUD en db.
+- **GlobalExceptionHandler:** gestiona excepciones dando respuestas para cada error.
+- **AudienceValidator:** valida tokens.
+- **SecurityConfiguration:** configura seguridad, incluyendo autenticación, autorización y permisos.
+- **AppConfig:** clase de configuración en donde se definen beans (objetos que Spring crea y gestiona automáticamente).
+- **RestTemplate:** clase que permite realizar solicitudes HTTP a otros servicios. (al definirlo como bean Spring lo administra automáticamente).
+- **PermissionServiceClient:** clase que se comunica con PermissionService, usando RestTemplate.
 
 ## Technologies
 
