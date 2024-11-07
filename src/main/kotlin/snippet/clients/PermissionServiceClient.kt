@@ -14,7 +14,7 @@ import snippet.model.dtos.ShareResource
 @Service
 class PermissionServiceClient(private val restTemplate: RestTemplate) {
 
-    private val baseUrl = "http://localhost:8081/resource"
+    private val baseUrl = "http://localhost:8082/resource"
 
     // Registrar un nuevo recurso (ownerId asociado con snippetId)
     fun addResource(resource: AddResource): ResourceUserPermission {
