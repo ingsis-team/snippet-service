@@ -4,5 +4,5 @@ data class ShareResource(
     val selfId: String,
     val otherId: String,
     val resourceId: String,
-    val permissions: List<String>
+    val permissions: List<String>,
 )

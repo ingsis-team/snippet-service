@@ -13,7 +13,6 @@ import snippet.model.dtos.ShareResource
 // Cliente HTTP que maneja conexión con servicio de permisos
 @Service
 class PermissionServiceClient(private val restTemplate: RestTemplate) {
-
     private val baseUrl = "http://localhost:8082/resource"
 
     // Registrar un nuevo recurso (ownerId asociado con snippetId)
@@ -42,19 +41,24 @@ class PermissionServiceClient(private val restTemplate: RestTemplate) {
 
     // Obtener todos los recursos a los que el usuario tiene acceso y sus niveles de permiso para cada uno
     fun getPermissionsForUser(userId: String): List<ResourceUserPermission> {
-        val uri = UriComponentsBuilder.fromHttpUrl("$baseUrl/all-by-userId")
-            .queryParam("id", userId)
-            .toUriString()
+        val uri =
+            UriComponentsBuilder.fromHttpUrl("$baseUrl/all-by-userId")
+                .queryParam("id", userId)
+                .toUriString()
         val response: ResponseEntity<Array<ResourceUserPermission>> =
             restTemplate.getForEntity(uri, Array<ResourceUserPermission>::class.java)
         return response.body?.toList() ?: emptyList()
     }
 
-    fun deleteResource(resourceId: String, userId: String): String{
+    fun deleteResource(
+        resourceId: String,
+        userId: String,
+    ): String {
         // construir url de solicitud incluyendo id de recurso en path
-        val uri = UriComponentsBuilder.fromHttpUrl("$baseUrl/$resourceId")
-            .queryParam("userId", userId)
-            .toUriString()
+        val uri =
+            UriComponentsBuilder.fromHttpUrl("$baseUrl/$resourceId")
+                .queryParam("userId", userId)
+                .toUriString()
 
         // realizar solicitud delete
         val response: ResponseEntity<String> = restTemplate.exchange(uri, HttpMethod.DELETE, null, String::class.java)
@@ -63,12 +67,16 @@ class PermissionServiceClient(private val restTemplate: RestTemplate) {
         return response.body ?: throw Exception("Failed to delete resource")
     }
 
-    fun getSpecificPermission(resourceId: String, userId: String): ResourceUserPermission{
+    fun getSpecificPermission(
+        resourceId: String,
+        userId: String,
+    ): ResourceUserPermission {
         // construir url con ambos parámetros
-        val uri = UriComponentsBuilder.fromHttpUrl("$baseUrl/user-resource")
-            .queryParam("userId", userId)
-            .queryParam("resourceId", resourceId)
-            .toUriString()
+        val uri =
+            UriComponentsBuilder.fromHttpUrl("$baseUrl/user-resource")
+                .queryParam("userId", userId)
+                .queryParam("resourceId", resourceId)
+                .toUriString()
 
         // realizar solicitud GET y obtener respuesta
         val response: ResponseEntity<ResourceUserPermission> =

@@ -1,21 +1,29 @@
 package snippet.controllers
 
 import org.springframework.http.ResponseEntity
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.*
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import snippet.model.entities.Snippet
 import snippet.services.SnippetService
 
-@CrossOrigin(origins = ["http://localhost:5173"])  // Add this annotation to allow CORS for frontend origin
+@CrossOrigin(origins = ["http://localhost:5173"]) // Add this annotation to allow CORS for frontend origin
 @RestController
 @RequestMapping("/snippets")
 class SnippetController(private val snippetService: SnippetService) {
-
     @PostMapping("/")
     fun createSnippet(
         @AuthenticationPrincipal jwt: Jwt,
-        @RequestBody snippetData: Snippet
+        @RequestBody snippetData: Snippet,
     ): ResponseEntity<Unit> {
         val userId = jwt.subject
         return ResponseEntity.ok(snippetService.createSnippet(snippetData, userId))
@@ -25,7 +33,7 @@ class SnippetController(private val snippetService: SnippetService) {
     fun updateSnippet(
         @AuthenticationPrincipal jwt: Jwt,
         @PathVariable snippetId: String,
-        @RequestBody snippetData: Snippet
+        @RequestBody snippetData: Snippet,
     ): ResponseEntity<Unit> {
         val userId = jwt.subject
         return ResponseEntity.ok(snippetService.updateSnippet(snippetId, snippetData, userId))
@@ -42,7 +50,7 @@ class SnippetController(private val snippetService: SnippetService) {
     @GetMapping("/{snippetId}")
     fun getSnippetById(
         @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String
+        @PathVariable snippetId: String,
     ): ResponseEntity<Snippet> {
         val userId = jwt.subject
         return ResponseEntity.ok(snippetService.getSnippetById(snippetId, userId))
@@ -51,7 +59,7 @@ class SnippetController(private val snippetService: SnippetService) {
     @DeleteMapping("/{snippetId}")
     fun deleteSnippetById(
         @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String
+        @PathVariable snippetId: String,
     ): ResponseEntity<String> {
         val userId = jwt.subject
         return ResponseEntity.ok(snippetService.deleteSnippetById(snippetId, userId))
