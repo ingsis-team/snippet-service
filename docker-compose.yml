@@ -1,43 +1,35 @@
-version: '3.9'
 services:
   api:
-    container_name: snippet-api
+    container_name: "snippet-api"
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8078:8080" # Expose Spring Boot app on 8078 externally
+      - "8050:8080" # Expose Spring Boot app on 8050 externally
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
       DB_HOST: snippet-db
       DB_PORT: 5432
     depends_on:
       - db
-    networks:
-      - snippet-network
 
   db:
-    container_name: snippet-db
-    image: postgres:17
+    container_name: "snippet-db"
+    image: postgres:12
     ports:
-      - 5450:5432
+      - 5450:5432 # Host:Container port mapping
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "postgres"
     volumes:
       - snippet-db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       retries: 5
-    networks:
-      - snippet-network
-
-networks:
-  snippet-network:
 
 volumes:
   snippet-db:
