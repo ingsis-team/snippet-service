@@ -18,11 +18,12 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfiguration(@Value("\${auth0.audience}")
-                            val audience: String,
-                            @Value("\${auth0.issuerUri}")
-                            val issuer: String,) {
-
+class SecurityConfiguration(
+    @Value("\${auth0.audience}")
+    val audience: String,
+    @Value("\${auth0.issuerUri}")
+    val issuer: String,
+) {
     @Bean // define reglas de autorización para solicitudes HTTP
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests {

@@ -13,7 +13,6 @@ class PermissionDeniedException(message: String) : RuntimeException(message)
 
 @ControllerAdvice
 class GlobalExceptionHandler {
-
     @ExceptionHandler(AuthenticationCredentialsNotFoundException::class)
     fun handleAuthenticationException(e: AuthenticationCredentialsNotFoundException): ResponseEntity<String> {
         return ResponseEntity("Authentication failed: ${e.message}", HttpStatus.UNAUTHORIZED)
