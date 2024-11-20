@@ -8,30 +8,58 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.MapKeyColumn
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
+import org.jetbrains.annotations.NotNull
+import snippet.model.dtos.testCase.TestCreateDTO
 
 @Entity
-class SnippetTest (
-    // id de test
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    var id: String? = null,
+class SnippetTest {
+    @Id()
+    @NotNull
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    var id: Long = 0
 
-    // id de snippet con el que se relaciona
-    @ManyToOne
-    @JoinColumn(name = "snippet_id")
-    var snippet: Snippet,
+    @Column
+    var snippetId: Long = 0
 
-    // inputs y sus tipos
+    @Column
+    var name: String = ""
+
     @ElementCollection
-    @CollectionTable(name = "snippet_test_inputs", joinColumns = [JoinColumn(name = "snippet_test_id")])
-    @MapKeyColumn(name = "input_value")
-    @Column(name = "input_type")
-    var inputsAndTypes: Map<String, String>,
+    @Column(name = "input")
+    var input: List<String> = mutableListOf()
 
-    // Output único con su tipo
-    var outputValue: String,
-    var outputType: String
-)
+    @ElementCollection
+    @CollectionTable(name = "test_case_outputs", joinColumns = [JoinColumn(name = "test_case_id")])
+    @Column(name = "output")
+    var output: List<String> = mutableListOf()
+
+    @Column
+    var envVars: String = ""
+
+    companion object {
+        fun from(testCaseDto: TestCreateDTO): SnippetTest {
+            val testCase = SnippetTest()
+            testCase.input = listOf(testCaseDto.input[0])
+            testCase.output = testCaseDto.output
+            testCase.name = testCaseDto.name
+            testCase.snippetId = testCaseDto.id
+            testCase.envVars = testCaseDto.envVars
+            return testCase
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

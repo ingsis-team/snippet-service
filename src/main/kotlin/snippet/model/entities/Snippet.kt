@@ -1,16 +1,36 @@
 package snippet.model.entities
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.*
+import org.jetbrains.annotations.NotNull
+import snippet.model.dtos.snippet.SnippetCreateDto
 
 @Entity
-class Snippet (
-    @Id @GeneratedValue(strategy = GenerationType.UUID) var id: String,
-    val name: String,
-    val description: String,
-    val language: String,
-    val version: String,
-    val content: String,
-)
+class Snippet {
+    @Id()
+    @NotNull
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    var id: Long = 0
+
+    @Column
+    var name: String = ""
+
+    @Column
+    var compliance: String = ""
+
+    @Column
+    var language: String = ""
+
+    @Column
+    var extension: String = ""
+
+    companion object {
+        fun from(snippetDto: SnippetCreateDto): Snippet {
+            val snippet = Snippet()
+            snippet.name = snippetDto.name
+            snippet.compliance = snippetDto.compliance
+            snippet.language = snippetDto.language
+            snippet.extension = snippetDto.extension
+            return snippet
+        }
+    }
+}

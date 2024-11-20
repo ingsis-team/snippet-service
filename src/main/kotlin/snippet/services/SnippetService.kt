@@ -1,68 +1,249 @@
 package snippet.services
 
+import org.intellij.lang.annotations.Language
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.crossstore.ChangeSetPersister
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
-import snippet.clients.PermissionServiceClient
 import snippet.exceptions.PermissionDeniedException
-import snippet.exceptions.SnippetNotFoundException
-import snippet.model.dtos.AddResource
-import snippet.model.dtos.ShareResource
+import snippet.model.dtos.permission.ResourcePermissionCreateDTO
+import snippet.model.dtos.permission.UserResourcePermission
+import snippet.model.dtos.printscript.FormatFileDto
+import snippet.model.dtos.printscript.PrintscriptDataDTO
+import snippet.model.dtos.printscript.Rule
+import snippet.model.dtos.snippet.GetSnippetDto
+import snippet.model.dtos.snippet.SnippetCreateDto
+import snippet.model.dtos.snippet.UpdateSnippetDto
 import snippet.model.entities.Snippet
 import snippet.repositories.SnippetRepository
+import java.util.*
 
 @Service
-class SnippetService(
-    private val snippetRepository: SnippetRepository,
-    private val permissionServiceClient: PermissionServiceClient
+class SnippetService
+@Autowired
+constructor(
+    val snippetRepository: SnippetRepository,
+    val assetService: AssetService,
+    val permissionService: PermissionService,
+    val printscriptService: PrintscriptService
 ){
 
-    fun createSnippet(snippet: Snippet, userId: String): Unit{
-        val savedSnippet = snippetRepository.save(snippet)
-        val addResource = AddResource(resourceId = savedSnippet.id, ownerId = userId)
-        permissionServiceClient.addResource(addResource)
+    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String): Snippet{
+        val snippet = Snippet.from(snippetDto)
+        val savedSnippet = this.snippetRepository.save(snippet)
+        createResourcePermissions(snippetDto, savedSnippet, correlationId)
+        saveSnippetOnAssetService(savedSnippet.id.toString(), snippetDto.content, correlationId)
+        return savedSnippet
     }
 
-    fun deleteSnippetById(snippetId: String, userId: String): String{
-        val permissions = permissionServiceClient.getSpecificPermission(snippetId, userId).permissions
-        val isOwner = permissions.any { it == "OWNER" }
-        if (!isOwner) throw PermissionDeniedException("El usuario $userId no tiene permiso para eliminar el snippet $snippetId.")
 
-        // eliminar el recurso en el sistema de permisos y el snippet de la base de datos
-        permissionServiceClient.deleteResource(snippetId, userId)
-        snippetRepository.deleteById(snippetId)
+    fun createResourcePermissions(snippetDto: SnippetCreateDto,savedSnippet: Snippet, correlationId: String){
+        val permissions = listOf("READ","WRITE")
+        val dto = ResourcePermissionCreateDTO(snippetDto.authorId, savedSnippet.id.toString(),permissions)
+        permissionService.createResourcePermission(dto, correlationId)
 
-        return "Snippet eliminado correctamente."
     }
 
-    fun updateSnippet(snippetId: String, snippetData: Snippet, userId: String){
-        // chequea si existe snippet
-        val snippet = snippetRepository.findById(snippetId)
-            .orElseThrow{SnippetNotFoundException("Snippet con id $snippetId no encontrado.")}
 
-        // chequea si tiene permisos de escritura en ese snippet
-        val permissions = permissionServiceClient.getPermissionsForUser(userId)
-        val hasWritePermission = permissions.any{it.resourceId==snippetId && it.permissions.any { it == "WRITE" }}
-        if (!hasWritePermission) throw PermissionDeniedException("Usuario $userId no tiene permisos de escritura en snippet $snippetId.")
-
-        // actualiza snippet
-        snippetRepository.save(snippetData)
+    fun saveSnippetOnAssetService(id:String, content: String, correlationId: String){
+        println("saving on asset service..")
+        assetService.saveSnippet(id,content,correlationId)
+        println("asset saved!")
     }
 
-    fun getSnippetsByUser(userId: String): Iterable<Snippet>{
-        val permission = permissionServiceClient.getPermissionsForUser(userId)
-        val snippetIds = permission.map { it.resourceId }
-        return snippetRepository.findAllById(snippetIds)
+   fun getSnippets(
+        userId: String,
+        page: Int,
+        size: Int,
+    ): Page<GetSnippetDto> {
+        val resources = permissionService.getAlluserResources(userId)
+        val context = snippetRepository.findAllById(resources.map { it.resourceId.toLong() })
+        val snippets =
+            context.map {
+                val content = assetService.getSnippet(it.id.toString())
+                GetSnippetDto.from(it, content)
+            }
+        return toPageable(snippets, page, size)
     }
 
-    fun getSnippetById(snippetId: String, userId: String): Snippet{
-        // chequea si usuario tiene acceso a snippet
-        val snippets = getSnippetsByUser(userId)
-        val snippet = snippets.firstOrNull { it -> it.id == snippetId }
-            ?: throw SnippetNotFoundException("Usuario $userId sin acceso a snippet $snippetId.")
-        return snippet
+    private fun toPageable(
+        snippets: List<GetSnippetDto>,
+        page: Int,
+        size: Int,
+    ): Page<GetSnippetDto> {
+        val total = snippets.size
+        val start = (page * size).coerceAtMost(total)
+        val end = (start + size).coerceAtMost(total)
+        val subList = snippets.subList(start, end)
+        return PageImpl(subList, PageRequest.of(page, size), total.toLong())
     }
 
-    fun shareSnippet(snippetId: String, selfId:String, otherId: String){
-        val shareResource = ShareResource(selfId = selfId, otherId = otherId, resourceId = snippetId, permissions = listOf("READ", "WRITE"))
-        permissionServiceClient.shareResource(shareResource)
+    fun getSnippetById(
+        userId: String,
+        snippetId: Long,
+    ): GetSnippetDto {
+        val context = snippetRepository.findById(snippetId).orElse(null) ?: throw ChangeSetPersister.NotFoundException()
+        val permission = permissionService.getAlluserResources(userId).filter { it.resourceId == snippetId.toString() }
+        if (permission.isEmpty()) throw PermissionDeniedException("User cannot acces this snippet")
+        val content = assetService.getSnippet(snippetId.toString())
+        return GetSnippetDto.from(context, content)
     }
+
+
+    fun getAllSnippetsByUser(userId: String): List<GetSnippetDto> {
+        val resources = permissionService.getAlluserResources(userId)
+        val context = snippetRepository.findAllById(resources.map { it.resourceId.toLong() })
+        val snippets =
+            context.map {
+                val content = assetService.getSnippet(it.id.toString())
+                GetSnippetDto.from(it, content)
+            }
+        return snippets
+    }
+
+
+     fun updateSnippet(
+         userId: String,
+         updateSnippetDto: UpdateSnippetDto,
+         correlationId: String,
+    ): GetSnippetDto {
+        val snippet = checkSnippetExists(updateSnippetDto.id.toLong())
+        checkUserCanModify(userId, updateSnippetDto.id)
+        assetService.deleteSnippet(updateSnippetDto.id)
+        saveSnippetOnAssetService(updateSnippetDto.id, updateSnippetDto.content, correlationId)
+        return GetSnippetDto.from(snippet, updateSnippetDto.content)
+    }
+
+    fun deleteSnippet(
+        userId: String,
+        snippetId: Long,
+    ) {
+        println("id: $snippetId")
+        permissionService.deleteResourcePermissions(userId, snippetId.toString())
+        println("deleted from resources")
+        assetService.deleteSnippet(snippetId.toString())
+        println("deleted from asset service")
+        val snippet = snippetRepository.findById(snippetId).orElse(null)
+        if (snippet == null) {
+            println("snippet not found")
+            throw ChangeSetPersister.NotFoundException()
+        }
+        snippetRepository.delete(snippet)
+    }
+
+     fun getSnippet(id: String): String = assetService.getSnippet(id)
+
+        fun shareSnippet(
+            authorId: String,
+            friendId: String,
+            snippetId: Long,
+        ): UserResourcePermission = permissionService.shareResource(authorId, snippetId.toString(), friendId)
+
+   fun getUsers(
+        pageNumber: Int,
+        pageSize: Int,
+    ): Page<String> {
+        val snippets = permissionService.getUsers()
+        val total = snippets.size
+        val start = (pageNumber * pageSize).coerceAtMost(total)
+        val end = (start + pageSize).coerceAtMost(total)
+        val subList = snippets.subList(start, end)
+        return PageImpl(subList, PageRequest.of(pageNumber, pageSize), total.toLong())
+    }
+
+     fun updateFormattedLintedSnippet(
+        snippetId: Long,
+        content: String,
+        correlationId: String,
+    ) {
+        assetService.saveSnippet(snippetId.toString(), content, correlationId)
+    }
+
+
+    private fun checkUserCanModify(
+        userId: String,
+        snippetId: String,
+    ) {
+        val permissions = permissionService.userCanWrite(userId, snippetId)
+        if (!permissions.permissions.contains("WRITE")) {
+            throw PermissionDeniedException("User does not have write permission")
+        }
+    }
+
+    private fun checkSnippetExists(id: Long): Snippet = snippetRepository.findById(id).orElseThrow { throw ChangeSetPersister.NotFoundException() }
+
+
+    fun formatSnippet(userId:String,snippetId:String,language: String,correlationId: UUID):String{
+        val permissions = permissionService.userCanWrite(userId, snippetId)
+        if(!permissions.permissions.contains("WRITE")) throw PermissionDeniedException("User cannot format this snippet")
+        val content = assetService.getSnippet(snippetId)
+        val data = FormatFileDto(correlationId,snippetId,language,"1.1",content,userId)
+        val response= printscriptService.formatSnippet(data)
+        return response.snippet
+
+
+    }
+
+    fun getFormatRules(
+        userId: String,
+        correlationId: UUID,
+    ): List<Rule> {
+        return printscriptService.getFormatRules(userId, correlationId)
+    }
+
+     fun getLintRules(
+        userId: String,
+        correlationId: UUID,
+    ): List<Rule> {
+        return printscriptService.getLintRules(userId, correlationId)
+    }
+
+     fun changeFormatRules(
+        userId: String,
+        rules: List<Rule>,
+        correlationId: UUID,
+    ) {
+        val snippets =
+            getAllSnippetsByUser(
+                userId,
+            ).map {
+                PrintscriptDataDTO(correlationId, it.id, it.language, "1.1", it.content)
+            }
+        rules.map {
+            println("rules: ${it.name} ${it.value} ${it.id} ${it.name}")
+        }
+        snippets.map {
+            println(it.input)
+        }
+        printscriptService.changeFormatRules(userId, rules, snippets, correlationId)
+    }
+
+     fun changeLintRules(
+        userId: String,
+        rules: List<Rule>,
+        correlationId: UUID,
+    ) {
+        val snippets =
+            getAllSnippetsByUser(
+                userId,
+            ).map {
+                PrintscriptDataDTO(correlationId, it.id, it.language, "1.1", it.content)
+            }
+        printscriptService.changeFormatRules(userId, rules, snippets, correlationId)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
+

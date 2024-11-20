@@ -1,69 +1,81 @@
 package snippet.controllers
 
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import snippet.model.dtos.permission.UserResourcePermission
+import snippet.model.dtos.snippet.GetSnippetDto
+import snippet.model.dtos.snippet.ShareSnippetDTO
+import snippet.model.dtos.snippet.SnippetCreateDto
+import snippet.model.dtos.snippet.UpdateSnippetDto
 import snippet.model.entities.Snippet
 import snippet.services.SnippetService
+import java.util.*
 
-@CrossOrigin(origins = ["http://localhost:5173"])  // Add this annotation to allow CORS for frontend origin
 @RestController
 @RequestMapping("/snippets")
-class SnippetController(private val snippetService: SnippetService) {
+class SnippetController(
+    @Autowired val snippetService: SnippetService) {
 
     @PostMapping("/")
     fun createSnippet(
-        @AuthenticationPrincipal jwt: Jwt,
-        @RequestBody snippetData: Snippet
-    ): ResponseEntity<Unit> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.createSnippet(snippetData, userId))
+        @RequestBody snippetData: SnippetCreateDto
+    ): Snippet {
+        val correlationId = UUID.randomUUID().toString()
+        return snippetService.createSnippet(snippetData, correlationId)
     }
 
-    @PutMapping("/{snippetId}")
-    fun updateSnippet(
-        @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String,
-        @RequestBody snippetData: Snippet
-    ): ResponseEntity<Unit> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.updateSnippet(snippetId, snippetData, userId))
+
+    @GetMapping()
+    fun getSnippets(
+        @RequestParam userId: String,
+        @RequestParam pageNumber: Int,
+        @RequestParam pageSize: Int,
+    ): Page<GetSnippetDto> {
+        println("getSnippets")
+        return snippetService.getSnippets(userId, pageNumber, pageSize)
     }
 
-    @GetMapping("/")
-    fun getSnippetsByUser(
-        @AuthenticationPrincipal jwt: Jwt,
-    ): ResponseEntity<List<Snippet>> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.getSnippetsByUser(userId).toList())
-    }
-
-    @GetMapping("/{snippetId}")
+    @GetMapping("/byId")
     fun getSnippetById(
-        @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String
-    ): ResponseEntity<Snippet> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.getSnippetById(snippetId, userId))
+        @RequestParam userId: String,
+        @RequestParam snippetId: String,
+    ): GetSnippetDto = snippetService.getSnippetById(userId, snippetId.toLong())
+
+
+    @PutMapping()
+    fun updateSnippet(
+        @RequestParam userId: String,
+        @RequestBody updateSnippetDto: UpdateSnippetDto,
+    ): GetSnippetDto {
+        val correlationId = UUID.randomUUID().toString()
+        return snippetService.updateSnippet(userId, updateSnippetDto, correlationId)
     }
 
-    @DeleteMapping("/{snippetId}")
-    fun deleteSnippetById(
-        @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String
-    ): ResponseEntity<String> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.deleteSnippetById(snippetId, userId))
+    @DeleteMapping("")
+    fun deleteSnippet(
+        @RequestParam userId: String,
+        @RequestParam snippetId: String,
+    ) {
+        println("user: $userId, snippet: $snippetId")
+        snippetService.deleteSnippet(userId, snippetId.toLong())
     }
 
-    @PostMapping("/{snippetId}/share")
+    @PostMapping("/share")
     fun shareSnippet(
-        @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable snippetId: String,
-        @RequestParam("userToShareWith") otherUserId: String,
-    ): ResponseEntity<Unit> {
-        val userId = jwt.subject
-        return ResponseEntity.ok(snippetService.shareSnippet(snippetId, userId, otherUserId))
-    }
+        @RequestParam userId: String,
+        @RequestBody snippetFriend: ShareSnippetDTO,
+    ): UserResourcePermission =
+        snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
+
+    @GetMapping("users")
+    fun getUsers(
+        @RequestParam pageNumber: Int,
+        @RequestParam pageSize: Int,
+    ): Page<String> = snippetService.getUsers(pageNumber, pageSize)
+
+
 }
