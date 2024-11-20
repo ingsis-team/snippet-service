@@ -3,7 +3,6 @@ services:
     container_name: "snippet-api"
     build:
       context: .
-      dockerfile: Dockerfile
     ports:
       - "8050:8080" # Expose Spring Boot app on 8050 externally
     environment:
@@ -17,7 +16,7 @@ services:
 
   db:
     container_name: "snippet-db"
-    image: postgres:12
+    image: postgres:17
     ports:
       - 5450:5432 # Host:Container port mapping
     environment:

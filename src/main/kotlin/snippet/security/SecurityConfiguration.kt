@@ -21,7 +21,7 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityConfiguration(
     @Value("\${auth0.audience}")
     val audience: String,
-    @Value("\${auth0.issuerUri}")
+    @Value("\${auth0.issuerUrl}")
     val issuer: String,
 ) {
     @Bean // define reglas de autorización para solicitudes HTTP
