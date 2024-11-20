@@ -5,13 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 8010:8080
+      - "8050:8080" # Expose Spring Boot app on 8050 externally
     environment:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      DB_HOST: snippet-db
+      DB_PORT: 5432
     depends_on:
       - db
 
@@ -19,13 +19,17 @@ services:
     container_name: "snippet-db"
     image: postgres:12
     ports:
-      - 5432:5432
+      - 5450:5432 # Host:Container port mapping
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: snippet-db
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "postgres"
     volumes:
       - snippet-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
 
 volumes:
   snippet-db:
