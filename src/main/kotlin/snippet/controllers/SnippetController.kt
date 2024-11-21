@@ -2,9 +2,8 @@ package snippet.controllers
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
-import org.springframework.http.ResponseEntity
-import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import snippet.model.dtos.permission.UserResourcePermission
 import snippet.model.dtos.snippet.GetSnippetDto
@@ -22,10 +21,12 @@ class SnippetController(
 
     @PostMapping("/")
     fun createSnippet(
-        @RequestBody snippetData: SnippetCreateDto
+        @RequestBody snippetData: SnippetCreateDto, @AuthenticationPrincipal jwt: Jwt
     ): Snippet {
         val correlationId = UUID.randomUUID().toString()
-        return snippetService.createSnippet(snippetData, correlationId)
+        val authorId = jwt.subject
+        val snippetDataWithAuthor = snippetData.copy(authorId = authorId)
+        return snippetService.createSnippet(snippetDataWithAuthor, correlationId)
     }
 
 

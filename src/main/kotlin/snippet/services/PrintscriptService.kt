@@ -11,6 +11,8 @@ import java.util.*
 
 @Service
 class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
+
+
     private val printscriptApi = WebClient.builder()
         .baseUrl(validateAndFormatUrl(printscriptUrl))
         .build()

@@ -12,7 +12,7 @@ import snippet.services.SnippetService
 import java.util.*
 
 @RestController
-@RequestMapping
+@RequestMapping("/run")
 class PrintscriptController(
     @Autowired private val snippetService: SnippetService,
 ) {
