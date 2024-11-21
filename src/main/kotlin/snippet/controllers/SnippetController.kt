@@ -19,64 +19,71 @@ import java.util.*
 class SnippetController(
     @Autowired val snippetService: SnippetService) {
 
-    @PostMapping("/")
+    @PostMapping()
     fun createSnippet(
-        @RequestBody snippetData: SnippetCreateDto, @AuthenticationPrincipal jwt: Jwt
+        @RequestBody snippetData: SnippetCreateDto,
+        @AuthenticationPrincipal jwt: Jwt
     ): Snippet {
         val correlationId = UUID.randomUUID().toString()
-        val authorId = jwt.subject
-        val snippetDataWithAuthor = snippetData.copy(authorId = authorId)
+        val userId = jwt.subject
+        val snippetDataWithAuthor = snippetData.copy(authorId = userId)
         return snippetService.createSnippet(snippetDataWithAuthor, correlationId)
     }
 
-
     @GetMapping()
     fun getSnippets(
-        @RequestParam userId: String,
         @RequestParam pageNumber: Int,
         @RequestParam pageSize: Int,
+        @AuthenticationPrincipal jwt: Jwt
     ): Page<GetSnippetDto> {
         println("getSnippets")
+        val userId = jwt.subject
         return snippetService.getSnippets(userId, pageNumber, pageSize)
     }
 
     @GetMapping("/byId")
     fun getSnippetById(
-        @RequestParam userId: String,
         @RequestParam snippetId: String,
-    ): GetSnippetDto = snippetService.getSnippetById(userId, snippetId.toLong())
+        @AuthenticationPrincipal jwt: Jwt
+    ): GetSnippetDto {
+        val userId = jwt.subject
+        return snippetService.getSnippetById(userId, snippetId.toLong())
+    }
 
 
     @PutMapping()
     fun updateSnippet(
-        @RequestParam userId: String,
         @RequestBody updateSnippetDto: UpdateSnippetDto,
+        @AuthenticationPrincipal jwt: Jwt
     ): GetSnippetDto {
+        val userId = jwt.subject
         val correlationId = UUID.randomUUID().toString()
         return snippetService.updateSnippet(userId, updateSnippetDto, correlationId)
     }
 
     @DeleteMapping("")
     fun deleteSnippet(
-        @RequestParam userId: String,
         @RequestParam snippetId: String,
+        @AuthenticationPrincipal jwt: Jwt
     ) {
+        val userId = jwt.subject
         println("user: $userId, snippet: $snippetId")
         snippetService.deleteSnippet(userId, snippetId.toLong())
     }
 
     @PostMapping("/share")
     fun shareSnippet(
-        @RequestParam userId: String,
         @RequestBody snippetFriend: ShareSnippetDTO,
-    ): UserResourcePermission =
-        snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
+        @AuthenticationPrincipal jwt: Jwt
+    ): UserResourcePermission {
+        val userId = jwt.subject
+        return snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
+    }
 
     @GetMapping("users")
     fun getUsers(
         @RequestParam pageNumber: Int,
         @RequestParam pageSize: Int,
     ): Page<String> = snippetService.getUsers(pageNumber, pageSize)
-
 
 }
