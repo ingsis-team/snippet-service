@@ -4,7 +4,7 @@ services:
     build:
       context: .
     ports:
-      - "8050:8080" # Expose Spring Boot app on 8050 externally
+      - "8089:8080"
     environment:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -18,7 +18,7 @@ services:
     container_name: "snippet-db"
     image: postgres:17
     ports:
-      - 5450:5432 # Host:Container port mapping
+      - 5439:5432
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"

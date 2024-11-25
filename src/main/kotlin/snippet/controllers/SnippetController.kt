@@ -1,5 +1,6 @@
 package snippet.controllers
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -19,11 +20,14 @@ import java.util.*
 class SnippetController(
     @Autowired val snippetService: SnippetService) {
 
+    private val logger = LoggerFactory.getLogger(SnippetController::class.java)
+
     @PostMapping()
     fun createSnippet(
         @RequestBody snippetData: SnippetCreateDto,
         @AuthenticationPrincipal jwt: Jwt
     ): Snippet {
+        logger.info("POST /snippets request received. User: ${jwt.subject}")
         val correlationId = UUID.randomUUID().toString()
         val userId = jwt.subject
         val snippetDataWithAuthor = snippetData.copy(authorId = userId)
@@ -34,11 +38,11 @@ class SnippetController(
     fun getSnippets(
         @RequestParam pageNumber: Int,
         @RequestParam pageSize: Int,
-        @AuthenticationPrincipal jwt: Jwt
-    ): Page<GetSnippetDto> {
-        println("getSnippets")
-        val userId = jwt.subject
-        return snippetService.getSnippets(userId, pageNumber, pageSize)
+        @AuthenticationPrincipal jwt: Jwt?
+    ): Page<GetSnippetDto>? {
+        logger.info("GET /snippets request received. User: ${jwt?.subject}")
+        val userId = jwt?.subject
+        return userId?.let { snippetService.getSnippets(it, pageNumber, pageSize) }
     }
 
     @GetMapping("/byId")
@@ -46,16 +50,17 @@ class SnippetController(
         @RequestParam snippetId: String,
         @AuthenticationPrincipal jwt: Jwt
     ): GetSnippetDto {
+        logger.info("GET /snippets/byId request received. User: ${jwt.subject}, SnippetId: $snippetId")
         val userId = jwt.subject
         return snippetService.getSnippetById(userId, snippetId.toLong())
     }
-
 
     @PutMapping()
     fun updateSnippet(
         @RequestBody updateSnippetDto: UpdateSnippetDto,
         @AuthenticationPrincipal jwt: Jwt
     ): GetSnippetDto {
+        logger.info("PUT /snippets request received. User: ${jwt.subject}")
         val userId = jwt.subject
         val correlationId = UUID.randomUUID().toString()
         return snippetService.updateSnippet(userId, updateSnippetDto, correlationId)
@@ -66,8 +71,8 @@ class SnippetController(
         @RequestParam snippetId: String,
         @AuthenticationPrincipal jwt: Jwt
     ) {
+        logger.info("DELETE /snippets request received. User: ${jwt.subject}, SnippetId: $snippetId")
         val userId = jwt.subject
-        println("user: $userId, snippet: $snippetId")
         snippetService.deleteSnippet(userId, snippetId.toLong())
     }
 
@@ -76,6 +81,7 @@ class SnippetController(
         @RequestBody snippetFriend: ShareSnippetDTO,
         @AuthenticationPrincipal jwt: Jwt
     ): UserResourcePermission {
+        logger.info("POST /snippets/share request received. User: ${jwt.subject}")
         val userId = jwt.subject
         return snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
     }
@@ -84,6 +90,8 @@ class SnippetController(
     fun getUsers(
         @RequestParam pageNumber: Int,
         @RequestParam pageSize: Int,
-    ): Page<String> = snippetService.getUsers(pageNumber, pageSize)
-
+    ): Page<String> {
+        logger.info("GET /snippets/users request received.")
+        return snippetService.getUsers(pageNumber, pageSize)
+    }
 }
