@@ -1,5 +1,5 @@
 # Use the Gradle image with JDK 21 to build and run the application.
-FROM gradle:8.10.0-jdk-21-and-22
+FROM gradle:8.10.0-jdk-21 AS build
 
 # Set working directory
 WORKDIR /home/gradle/src
@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y postgresql-client
 
 # Build the application
 RUN gradle assemble
+FROM eclipse-temurin:21-jdk-alpine
 
 # Expose application port
 EXPOSE 8080
@@ -21,5 +22,5 @@ RUN mkdir -p /usr/local/newrelic
 ADD ./newrelic-java/newrelic/newrelic.jar /usr/local/newrelic/newrelic.jar
 ADD ./newrelic-java/newrelic/newrelic.yml /usr/local/newrelic/newrelic.yml
 
-# Run the application
+# Run the
 ENTRYPOINT ["java", "-javaagent:/usr/local/newrelic/newrelic.jar", "-jar", "/home/gradle/src/build/libs/snippet-service-0.0.1-SNAPSHOT.jar"]
