@@ -3,7 +3,6 @@ package snippet.controllers
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -14,6 +13,7 @@ import snippet.model.dtos.snippet.GetSnippetDto
 import snippet.model.dtos.snippet.ShareSnippetDTO
 import snippet.model.dtos.snippet.SnippetCreateDto
 import snippet.model.dtos.snippet.UpdateSnippetDto
+import snippet.model.entities.Snippet
 import snippet.services.SnippetService
 import java.util.*
 
@@ -22,31 +22,36 @@ import java.util.*
 @CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
 
 class SnippetController(
-    @Autowired val snippetService: SnippetService
-) {
+    @Autowired val snippetService: SnippetService) {
+
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
-    @PostMapping
+    @PostMapping()
     fun createSnippet(
         @RequestBody snippetData: SnippetCreateDto,
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<Any> {
+        return try{
         logger.info("POST /snippets request received. User: ${jwt.subject}")
-        val userId = jwt.subject ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT token")
         val correlationId = UUID.randomUUID().toString()
+        val userId = jwt.subject
         val snippetDataWithAuthor = snippetData.copy(authorId = userId)
-        return ResponseEntity.ok(snippetService.createSnippet(snippetDataWithAuthor, correlationId))
+        val snippet =  snippetService.createSnippet(snippetDataWithAuthor, correlationId)
+        ResponseEntity.ok(snippet)}
+        catch (e: ResponseStatusException){
+            ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))
+        }
     }
 
-    @GetMapping
+    @GetMapping()
     fun getSnippets(
-        @RequestParam(defaultValue = "0") pageNumber: Int,
-        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam pageNumber: Int,
+        @RequestParam pageSize: Int,
         @AuthenticationPrincipal jwt: Jwt?
     ): Page<GetSnippetDto>? {
         logger.info("GET /snippets request received. User: ${jwt?.subject}")
-        val userId = jwt?.subject ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT token")
-        return snippetService.getSnippets(userId, pageNumber, pageSize)
+        val userId = jwt?.subject
+        return userId?.let { snippetService.getSnippets(it, pageNumber, pageSize) }
     }
 
     @GetMapping("/byId")
@@ -58,7 +63,6 @@ class SnippetController(
         val userId = jwt.subject
         return snippetService.getSnippetById(userId, snippetId.toLong())
     }
-
 
     @PutMapping()
     fun updateSnippet(
