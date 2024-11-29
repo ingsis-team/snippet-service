@@ -3,9 +3,11 @@ package snippet.controllers
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import snippet.model.dtos.permission.UserResourcePermission
 import snippet.model.dtos.snippet.GetSnippetDto
 import snippet.model.dtos.snippet.ShareSnippetDTO
@@ -17,6 +19,8 @@ import java.util.*
 
 @RestController
 @RequestMapping("/snippets")
+@CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
+
 class SnippetController(
     @Autowired val snippetService: SnippetService) {
 
@@ -26,12 +30,17 @@ class SnippetController(
     fun createSnippet(
         @RequestBody snippetData: SnippetCreateDto,
         @AuthenticationPrincipal jwt: Jwt
-    ): Snippet {
+    ): ResponseEntity<Any> {
+        return try{
         logger.info("POST /snippets request received. User: ${jwt.subject}")
         val correlationId = UUID.randomUUID().toString()
         val userId = jwt.subject
         val snippetDataWithAuthor = snippetData.copy(authorId = userId)
-        return snippetService.createSnippet(snippetDataWithAuthor, correlationId)
+        val snippet =  snippetService.createSnippet(snippetDataWithAuthor, correlationId)
+        ResponseEntity.ok(snippet)}
+        catch (e: ResponseStatusException){
+            ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))
+        }
     }
 
     @GetMapping()

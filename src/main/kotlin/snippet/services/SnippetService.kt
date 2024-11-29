@@ -6,7 +6,10 @@ import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import snippet.exceptions.InvalidSnippetException
 import snippet.exceptions.PermissionDeniedException
 import snippet.model.dtos.permission.ResourcePermissionCreateDTO
 import snippet.model.dtos.permission.UserResourcePermission
@@ -31,11 +34,16 @@ constructor(
 ){
 
     fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String): Snippet{
+        try{
+//        validateSnippet(snippetDto.content)
         val snippet = Snippet.from(snippetDto)
         val savedSnippet = this.snippetRepository.save(snippet)
         createResourcePermissions(snippetDto, savedSnippet, correlationId)
         saveSnippetOnAssetService(savedSnippet.id.toString(), snippetDto.content, correlationId)
-        return savedSnippet
+        return savedSnippet}
+        catch(e: InvalidSnippetException){
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
+        }
     }
 
 
@@ -52,6 +60,22 @@ constructor(
         assetService.saveSnippet(id,content,correlationId)
         println("asset saved!")
     }
+
+    private fun validateSnippet(content:String){
+        val validationResult = printscriptService.validate(content)
+        if(!validationResult.isValid){
+            throw InvalidSnippetException(validationResult.rule,validationResult.line,validationResult.column)
+        }
+
+    }
+
+
+
+
+
+
+
+
 
    fun getSnippets(
         userId: String,

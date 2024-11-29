@@ -17,26 +17,14 @@ class SecurityConfig {
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests for CORS preflight
+                    .requestMatchers("/", "/example/**").permitAll() // Allow access to / and /public/**
                     .anyRequest().authenticated() // All other requests require authentication
             }
             .oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->
-                     // Optional: Map JWT claims to authorities
+                    // Optional: Map JWT claims to authorities
                 }
             }
         return http.build()
     }
-
-//    @Bean
-//    fun customJwtAuthenticationConverter(): JwtAuthenticationConverter {
-//        val converter = JwtAuthenticationConverter()
-//        converter.setJwtGrantedAuthoritiesConverter { jwt ->
-//            jwt.claims["roles"]
-//                ?.toString()
-//                ?.split(",")
-//                ?.map { SimpleGrantedAuthority(it.trim()) }
-//                ?: emptyList()
-//        }
-//        return converter
-//    }
 }

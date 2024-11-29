@@ -34,13 +34,20 @@ class SecurityConfiguration(
                 .requestMatchers(POST, "/snippets").hasAuthority("SCOPE_write:snippets")
                 .anyRequest().authenticated() // cualquier otra solicitud requiere autenticación
         }
-            .oauth2ResourceServer { it.jwt(withDefaults()) } // configura servidor para que use JWT
-            .cors { it.disable() } // deshabilita cors
-            .csrf { it.disable() } // deshabilita csrf
+            .oauth2ResourceServer { it.jwt(withDefaults()) }
+            .cors { it.configurationSource { request ->
+                val cors = org.springframework.web.cors.CorsConfiguration()
+                cors.allowedOrigins = listOf("http://localhost:5173")
+                cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                cors.allowedHeaders = listOf("*")
+                cors.allowCredentials = true
+                cors
+            } }
+            .csrf { it.disable() }
         return http.build()
     }
 
-    @Bean // valida tokens JWT
+    @Bean
     fun jwtDecoder(): JwtDecoder {
         val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
         val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)

@@ -1,26 +1,19 @@
 # Use the Gradle image with JDK 21 to build and run the application.
-FROM gradle:8.10.0-jdk-21 AS build
+FROM gradle:8.7.0-jdk17 AS build
 
-# Set working directory
 WORKDIR /home/gradle/src
+COPY . .
 
-# Copy project files
-COPY . /home/gradle/src
-
-# Install PostgreSQL client
-RUN apt-get update && apt-get install -y postgresql-client
-
-# Build the application
 RUN gradle assemble
-FROM eclipse-temurin:21-jdk-alpine
 
+FROM amazoncorretto:17-alpine
 # Expose application port
 EXPOSE 8080
 
-# Copy New Relic files
-RUN mkdir -p /usr/local/newrelic
-ADD ./newrelic-java/newrelic/newrelic.jar /usr/local/newrelic/newrelic.jar
-ADD ./newrelic-java/newrelic/newrelic.yml /usr/local/newrelic/newrelic.yml
+# Set working directory
+RUN mkdir /app
+COPY --from=build /home/gradle/src/build/libs/snippet-service-0.0.1-SNAPSHOT.jar /app/snippet-service-0.0.1-SNAPSHOT.jar
+COPY ./newrelic-java/newrelic/newrelic.jar /app/newrelic.jar
+COPY ./newrelic-java/newrelic/newrelic.yml /app/newrelic.yml
 
-# Run the
-ENTRYPOINT ["java", "-javaagent:/usr/local/newrelic/newrelic.jar", "-jar", "/home/gradle/src/build/libs/snippet-service-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=production", "-javaagent:/app/newrelic.jar", "/app/snippet-service-0.0.1-SNAPSHOT.jar"]

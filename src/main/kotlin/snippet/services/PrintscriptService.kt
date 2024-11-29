@@ -25,6 +25,18 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
         }
     }
 
+
+    fun validate(content:String):ValidationResult=
+        printscriptApi
+            .post()
+            .uri("/validate")
+            .bodyValue(mapOf("content" to content))
+            .retrieve()
+            .bodyToMono(ValidationResult::class.java)
+            .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not validate snippet")
+
+
+
     fun formatSnippet(data: FormatFileDto): PrintscriptResponseDTO =
         printscriptApi
             .post()

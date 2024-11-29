@@ -1,15 +1,11 @@
 package snippet
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.boot.runApplication
 
 @SpringBootApplication
-@RestController
-class SnippetApplication {
-    @GetMapping("/")
-    fun noAuth(): String {
-        println("This is returning the message")
-        return "no auth needed"
-    }
+class SnippetApplication
+
+fun main(args: Array<String>) {
+    runApplication<SnippetApplication>(*args)
 }
