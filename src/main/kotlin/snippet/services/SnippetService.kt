@@ -33,12 +33,12 @@ constructor(
     val printscriptService: PrintscriptService
 ){
 
-    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String): Snippet{
+    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet{
         try{
 //        validateSnippet(snippetDto.content)
-        val snippet = Snippet.from(snippetDto)
+        val snippet = Snippet.from(snippetDto,authorId)
         val savedSnippet = this.snippetRepository.save(snippet)
-        createResourcePermissions(snippetDto, savedSnippet, correlationId)
+        createResourcePermissions(snippetDto, savedSnippet, correlationId, authorId)
         saveSnippetOnAssetService(savedSnippet.id.toString(), snippetDto.content, correlationId)
         return savedSnippet}
         catch(e: InvalidSnippetException){
@@ -47,9 +47,9 @@ constructor(
     }
 
 
-    fun createResourcePermissions(snippetDto: SnippetCreateDto,savedSnippet: Snippet, correlationId: String){
+    fun createResourcePermissions(snippetDto: SnippetCreateDto,savedSnippet: Snippet, correlationId: String,authorId: String){
         val permissions = listOf("READ","WRITE")
-        val dto = ResourcePermissionCreateDTO(snippetDto.authorId, savedSnippet.id.toString(),permissions)
+        val dto = ResourcePermissionCreateDTO(authorId, savedSnippet.id.toString(),permissions)
         permissionService.createResourcePermission(dto, correlationId)
 
     }

@@ -14,6 +14,7 @@ import snippet.model.dtos.snippet.ShareSnippetDTO
 import snippet.model.dtos.snippet.SnippetCreateDto
 import snippet.model.dtos.snippet.UpdateSnippetDto
 import snippet.model.entities.Snippet
+import snippet.security.JwtUtil
 import snippet.services.SnippetService
 import java.util.*
 
@@ -21,8 +22,8 @@ import java.util.*
 @RequestMapping("/snippets")
 @CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
 
-class SnippetController(
-    @Autowired val snippetService: SnippetService) {
+class SnippetController @Autowired constructor(
+    private val snippetService: SnippetService,private val jwtUtil: JwtUtil ) {
 
     private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
@@ -34,9 +35,7 @@ class SnippetController(
         return try{
         logger.info("POST /snippets request received. User: ${jwt.subject}")
         val correlationId = UUID.randomUUID().toString()
-        val userId = jwt.subject
-        val snippetDataWithAuthor = snippetData.copy(authorId = userId)
-        val snippet =  snippetService.createSnippet(snippetDataWithAuthor, correlationId)
+        val snippet =  snippetService.createSnippet(snippetData, correlationId,jwt.subject)
         ResponseEntity.ok(snippet)}
         catch (e: ResponseStatusException){
             ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))

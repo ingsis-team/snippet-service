@@ -1,11 +1,12 @@
 auth0:
-  audience: "https://snippet-searcher/"
-
+  audience: ${AUTH0_AUDIENCE}
 spring:
   application:
-    name: "snippet-service"
+    name: resource-service-with-auth-example
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "https://dev-z8z6elh804gqgf0d.us.auth0.com/"
+          issuer-uri: ${AUTH_SERVER_URI}
+          client-id: ${AUTH_CLIENT_ID}
+          client-secret: ${AUTH_CLIENT_SECRET}
