@@ -1,6 +1,7 @@
 package snippet.services
 
 import org.intellij.lang.annotations.Language
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.data.domain.Page
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import snippet.exceptions.InvalidSnippetException
 import snippet.exceptions.PermissionDeniedException
+import snippet.model.dtos.permission.Permission
 import snippet.model.dtos.permission.ResourcePermissionCreateDTO
 import snippet.model.dtos.permission.UserResourcePermission
 import snippet.model.dtos.printscript.FormatFileDto
@@ -33,32 +35,46 @@ constructor(
     val printscriptService: PrintscriptService
 ){
 
-    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet{
-        try{
-//        validateSnippet(snippetDto.content)
-        val snippet = Snippet.from(snippetDto,authorId)
-        val savedSnippet = this.snippetRepository.save(snippet)
-        createResourcePermissions(snippetDto, savedSnippet, correlationId, authorId)
-        saveSnippetOnAssetService(savedSnippet.id.toString(), snippetDto.content, correlationId)
-        return savedSnippet}
-        catch(e: InvalidSnippetException){
+    private val logger = LoggerFactory.getLogger(SnippetService::class.java)
+
+
+    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet {
+        logger.info("Creating snippet with correlationId: $correlationId and authorId: $authorId")
+        try {
+            // validateSnippet(snippetDto.content)
+            val snippet = Snippet.from(snippetDto, authorId)
+            logger.info("Snippet created from DTO: $snippet")
+            val savedSnippet = this.snippetRepository.save(snippet)
+            logger.info("Snippet saved to repository with ID: ${savedSnippet.id}")
+            try {
+                createResourcePermissions(snippetDto, savedSnippet, correlationId, authorId)
+                logger.info("Resource permissions created for snippet ID: ${savedSnippet.id}")
+            } catch (e: Exception) {
+                logger.error("Failed to create resource permissions for snippet ID: ${savedSnippet.id}", e)
+                throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create resource permissions: ${e.message}", e)
+            }
+            saveSnippetOnAssetService(savedSnippet.id.toString(), snippetDto.content, correlationId)
+            logger.info("Snippet saved on asset service with ID: ${savedSnippet.id}")
+            return savedSnippet
+        } catch (e: InvalidSnippetException) {
+            logger.error("Invalid snippet exception: ${e.message}", e)
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message, e)
         }
     }
 
 
     fun createResourcePermissions(snippetDto: SnippetCreateDto,savedSnippet: Snippet, correlationId: String,authorId: String){
-        val permissions = listOf("READ","WRITE")
+        val permissions = listOf(Permission.READ,Permission.WRITE)
         val dto = ResourcePermissionCreateDTO(authorId, savedSnippet.id.toString(),permissions)
         permissionService.createResourcePermission(dto, correlationId)
 
     }
 
 
-    fun saveSnippetOnAssetService(id:String, content: String, correlationId: String){
-        println("saving on asset service..")
-        assetService.saveSnippet(id,content,correlationId)
-        println("asset saved!")
+    fun saveSnippetOnAssetService(id: String, content: String, correlationId: String) {
+        logger.info("Saving snippet on asset service with ID: $id and correlationId: $correlationId")
+        assetService.saveSnippet(id, content, correlationId)
+        logger.info("Snippet saved on asset service with ID: $id")
     }
 
     private fun validateSnippet(content:String){
@@ -191,7 +207,7 @@ constructor(
         snippetId: String,
     ) {
         val permissions = permissionService.userCanWrite(userId, snippetId)
-        if (!permissions.permissions.contains("WRITE")) {
+        if (!permissions.permissions.contains(Permission.WRITE)) {
             throw PermissionDeniedException("User does not have write permission")
         }
     }
@@ -201,7 +217,7 @@ constructor(
 
     fun formatSnippet(userId:String,snippetId:String,language: String,correlationId: UUID):String{
         val permissions = permissionService.userCanWrite(userId, snippetId)
-        if(!permissions.permissions.contains("WRITE")) throw PermissionDeniedException("User cannot format this snippet")
+        if(!permissions.permissions.contains(Permission.WRITE)) throw PermissionDeniedException("User cannot format this snippet")
         val content = assetService.getSnippet(snippetId)
         val data = FormatFileDto(correlationId,snippetId,language,"1.1",content,userId)
         val response= printscriptService.formatSnippet(data)

@@ -6,9 +6,10 @@ import snippet.model.dtos.snippet.SnippetCreateDto
 
 @Entity
 class Snippet {
-    @Id()
+    @Id
     @NotNull
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "snippet_seq")
+    @SequenceGenerator(name = "snippet_seq", sequenceName = "snippet_sequence", allocationSize = 1)
     var id: Long = 0
 
     @Column

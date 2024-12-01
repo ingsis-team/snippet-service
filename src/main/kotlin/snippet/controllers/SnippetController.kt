@@ -35,7 +35,7 @@ class SnippetController @Autowired constructor(
         return try{
         logger.info("POST /snippets request received. User: ${jwt.subject}")
         val correlationId = UUID.randomUUID().toString()
-        val snippet =  snippetService.createSnippet(snippetData, correlationId,jwt.subject)
+        val snippet =  snippetService.createSnippet(snippetData, correlationId, jwt.subject)
         ResponseEntity.ok(snippet)}
         catch (e: ResponseStatusException){
             ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))

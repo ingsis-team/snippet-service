@@ -1,5 +1,6 @@
 package snippet.services
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.web.server.ResponseStatusException
@@ -12,19 +13,22 @@ import reactor.core.publisher.Mono
 @Service
 
 class AssetService(@Value("\${asset.url}") assetUrl: String) {
-
+    private val logger = LoggerFactory.getLogger(AssetService::class.java)
     private val assetServiceApi = WebClient.builder().baseUrl("http://$assetUrl/v1/asset").build()
 
     fun saveSnippet(key:String, snippet: String, correlationId:String):Boolean{
+        logger.info("Attempting to save snippet with key: $key and correlationId: $correlationId")
         return try{
             val responseStatus=
                 assetServiceApi
-                    .post()
+                    .put()
                     .uri("/snippets/{key}",key)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("correlationId", correlationId)
                     .bodyValue(snippet)
                     .exchangeToMono{ clientResponse ->
+                        logger.info("Received response status: ${clientResponse.statusCode()}")
+
                         if(clientResponse.statusCode() == HttpStatus.CREATED){
                             Mono.just(HttpStatus.CREATED)
                         }else{
@@ -35,13 +39,15 @@ class AssetService(@Value("\${asset.url}") assetUrl: String) {
                     .block()
             responseStatus == HttpStatus.CREATED
         }catch(e:Exception){
-            println(e.message)
+            logger.error("Exception occurred while saving snippet: ${e.message}", e)
             false
         }
     }
 
 
 fun getSnippet(key: String): String {
+    logger.info("Attempting to get snippet with key: $key")
+
     val response =
         assetServiceApi
             .get()

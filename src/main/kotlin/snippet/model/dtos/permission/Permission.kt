@@ -1,6 +1,6 @@
 package snippet.model.dtos.permission
 
-enum class Permissons {
+enum class Permission {
     READ,
     WRITE,
     OWNER
