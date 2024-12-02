@@ -3,6 +3,7 @@ package snippet.controllers
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -67,11 +68,18 @@ class SnippetController @Autowired constructor(
     fun updateSnippet(
         @RequestBody updateSnippetDto: UpdateSnippetDto,
         @AuthenticationPrincipal jwt: Jwt
-    ): GetSnippetDto {
+    ): ResponseEntity<Any> {
+        logger.info("JSON recibido: id=${updateSnippetDto.id}, content=${updateSnippetDto.content}")
         logger.info("PUT /snippets request received. User: ${jwt.subject}")
-        val userId = jwt.subject
-        val correlationId = UUID.randomUUID().toString()
-        return snippetService.updateSnippet(userId, updateSnippetDto, correlationId)
+        return try {
+            logger.info("Request body: $updateSnippetDto")
+            val correlationId = UUID.randomUUID().toString()
+            val updatedSnippet = snippetService.updateSnippet(jwt.subject, updateSnippetDto, correlationId)
+            ResponseEntity.ok(updatedSnippet)
+        } catch (e: Exception) {
+            logger.error("Error updating snippet: ${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Error updating snippet: ${e.message}"))
+        }
     }
 
     @DeleteMapping("")

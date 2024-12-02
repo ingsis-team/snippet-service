@@ -58,20 +58,27 @@ fun getSnippet(key: String): String {
     return response
 }
 
-fun deleteSnippet(key: String): Boolean {
-    assetServiceApi
-        .delete()
-        .uri("/snippets/{key}", key)
-        .exchangeToMono { clientResponse ->
-            if (clientResponse.statusCode() == HttpStatus.NO_CONTENT) {
-                Mono.just(HttpStatus.OK)
-            } else {
-                Mono.just(HttpStatus.BAD_REQUEST)
-            }
+    fun deleteSnippet(key: String): Boolean {
+        logger.info("Attempting to delete snippet with key: $key")
+        return try {
+            val responseStatus = assetServiceApi
+                .delete()
+                .uri("/snippets/{key}", key)
+                .exchangeToMono { clientResponse ->
+                    logger.info("Received response status: ${clientResponse.statusCode()}")
+                    if (clientResponse.statusCode() == HttpStatus.NO_CONTENT) {
+                        Mono.just(HttpStatus.OK)
+                    } else {
+                        Mono.just(HttpStatus.BAD_REQUEST)
+                    }
+                }
+                .block() ?: throw ChangeSetPersister.NotFoundException()
+            responseStatus == HttpStatus.OK
+        } catch (e: Exception) {
+            logger.error("Exception occurred while deleting snippet: ${e.message}", e)
+            false
         }
-        .block() ?: throw ChangeSetPersister.NotFoundException()
-    return true
-}
+    }
 
 
 }

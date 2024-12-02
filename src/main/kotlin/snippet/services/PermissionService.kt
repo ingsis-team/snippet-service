@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import snippet.exceptions.PermissionDeniedException
 import snippet.model.dtos.permission.PermissionResponse
 import snippet.model.dtos.permission.ResourcePermissionCreateDTO
+import snippet.model.dtos.permission.UserResource
 import snippet.model.dtos.permission.UserResourcePermission
 
 
@@ -47,14 +48,14 @@ class PermissionService(@Value("\${permission.url}") permissionUrl :String) {
 
     }
 //Recibe la respuesta del servidor, que indica si el usuario tiene permiso para escribir en el recurso
-    fun userCanWrite(userId:String,resourceId:String):PermissionResponse{
+    fun userCanWrite(userId:String,resourceId:String): UserResource {
         return permissionApi
             .get()
             .uri("/resource/can-write")
             .cookie("userId",userId)
             .cookie("resourceId",resourceId)
             .retrieve()
-            .bodyToMono(PermissionResponse::class.java)
+            .bodyToMono(UserResource::class.java)
             .block()?: throw RuntimeException("Unable to fetch permissions")
     }
 

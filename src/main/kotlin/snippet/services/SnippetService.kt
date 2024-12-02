@@ -1,6 +1,5 @@
 package snippet.services
 
-import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
@@ -85,14 +84,6 @@ constructor(
 
     }
 
-
-
-
-
-
-
-
-
    fun getSnippets(
         userId: String,
         page: Int,
@@ -144,16 +135,22 @@ constructor(
     }
 
 
-     fun updateSnippet(
-         userId: String,
-         updateSnippetDto: UpdateSnippetDto,
-         correlationId: String,
+    fun updateSnippet(
+        userId: String,
+        updateSnippetDto: UpdateSnippetDto,
+        correlationId: String,
     ): GetSnippetDto {
-        val snippet = checkSnippetExists(updateSnippetDto.id.toLong())
-        checkUserCanModify(userId, updateSnippetDto.id)
-        assetService.deleteSnippet(updateSnippetDto.id)
-        saveSnippetOnAssetService(updateSnippetDto.id, updateSnippetDto.content, correlationId)
-        return GetSnippetDto.from(snippet, updateSnippetDto.content)
+        return try {
+            val snippet = checkSnippetExists(updateSnippetDto.id.toLong())
+            logger.info("Checking if the user can modify the snippet..")
+            checkUserCanModify(userId, updateSnippetDto.id)
+            assetService.deleteSnippet(updateSnippetDto.id)
+            saveSnippetOnAssetService(updateSnippetDto.id, updateSnippetDto.content, correlationId)
+            GetSnippetDto.from(snippet, updateSnippetDto.content)
+        } catch (e: Exception) {
+            logger.error("Error updating snippet: ${e.message}")
+            throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error updating snippet: ${e.message}", e)
+        }
     }
 
     fun deleteSnippet(
@@ -175,11 +172,11 @@ constructor(
 
      fun getSnippet(id: String): String = assetService.getSnippet(id)
 
-        fun shareSnippet(
-            authorId: String,
-            friendId: String,
-            snippetId: Long,
-        ): UserResourcePermission = permissionService.shareResource(authorId, snippetId.toString(), friendId)
+    fun shareSnippet(
+                authorId: String,
+                friendId: String,
+                snippetId: Long,
+            ): UserResourcePermission = permissionService.shareResource(authorId, snippetId.toString(), friendId)
 
    fun getUsers(
         pageNumber: Int,
@@ -206,10 +203,14 @@ constructor(
         userId: String,
         snippetId: String,
     ) {
+        logger.info("Checking if user $userId can modify snippet $snippetId")
         val permissions = permissionService.userCanWrite(userId, snippetId)
-        if (!permissions.permissions.contains(Permission.WRITE)) {
+        logger.info("Los valores que te dan son $permissions")
+        if (!permissions.resourceId.contains(Permission.WRITE)) {
+            logger.error("User $userId does not have write permission for snippet $snippetId")
             throw PermissionDeniedException("User does not have write permission")
         }
+        logger.info("User $userId has write permission for snippet $snippetId")
     }
 
     private fun checkSnippetExists(id: Long): Snippet = snippetRepository.findById(id).orElseThrow { throw ChangeSetPersister.NotFoundException() }
@@ -217,7 +218,7 @@ constructor(
 
     fun formatSnippet(userId:String,snippetId:String,language: String,correlationId: UUID):String{
         val permissions = permissionService.userCanWrite(userId, snippetId)
-        if(!permissions.permissions.contains(Permission.WRITE)) throw PermissionDeniedException("User cannot format this snippet")
+        if(!permissions.resourceId.contains(Permission.WRITE)) throw PermissionDeniedException("User cannot format this snippet")
         val content = assetService.getSnippet(snippetId)
         val data = FormatFileDto(correlationId,snippetId,language,"1.1",content,userId)
         val response= printscriptService.formatSnippet(data)
