@@ -40,7 +40,7 @@ constructor(
     fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet {
         logger.info("Creating snippet with correlationId: $correlationId and authorId: $authorId")
         try {
-            // validateSnippet(snippetDto.content)
+//             validateSnippet(snippetDto.content)
             val snippet = Snippet.from(snippetDto, authorId)
             logger.info("Snippet created from DTO: $snippet")
             val savedSnippet = this.snippetRepository.save(snippet)
@@ -272,7 +272,7 @@ constructor(
             ).map {
                 PrintscriptDataDTO(correlationId, it.id, it.language, "1.1", it.content)
             }
-        printscriptService.changeFormatRules(userId, rules, snippets, correlationId)
+        printscriptService.changeLintRules(userId, rules, snippets, correlationId)
     }
 
 
