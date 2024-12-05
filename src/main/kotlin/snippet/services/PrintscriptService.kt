@@ -30,7 +30,7 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
         printscriptApi
             .post()
             .uri("/validate")
-            .bodyValue(mapOf("content" to content))
+            .bodyValue(content)
             .retrieve()
             .bodyToMono(ValidationResult::class.java)
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not validate snippet")

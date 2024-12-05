@@ -34,12 +34,15 @@ class SnippetController @Autowired constructor(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<Any> {
         return try{
-        logger.info("POST /snippets request received. User: ${jwt.subject}")
-        val correlationId = UUID.randomUUID().toString()
-        val snippet =  snippetService.createSnippet(snippetData, correlationId, jwt.subject)
-        ResponseEntity.ok(snippet)}
-        catch (e: ResponseStatusException){
+            logger.info("POST /snippets request received. User: ${jwt.subject}")
+            val correlationId = UUID.randomUUID().toString()
+            val snippet =  snippetService.createSnippet(snippetData, correlationId, jwt.subject)
+            ResponseEntity.ok(snippet)
+        } catch (e: ResponseStatusException){
             ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))
+        } catch (e: Exception) {
+            logger.error("Unexpected error during snippet creation: ${e.message}", e)
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
         }
     }
 

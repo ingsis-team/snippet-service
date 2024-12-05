@@ -40,7 +40,7 @@ constructor(
     fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet {
         logger.info("Creating snippet with correlationId: $correlationId and authorId: $authorId")
         try {
-            // validateSnippet(snippetDto.content)
+            validateSnippet(snippetDto.content) // valida sintaxis
             val snippet = Snippet.from(snippetDto, authorId)
             logger.info("Snippet created from DTO: $snippet")
             val savedSnippet = this.snippetRepository.save(snippet)
@@ -81,7 +81,6 @@ constructor(
         if(!validationResult.isValid){
             throw InvalidSnippetException(validationResult.rule,validationResult.line,validationResult.column)
         }
-
     }
 
    fun getSnippets(
@@ -144,6 +143,7 @@ constructor(
             val snippet = checkSnippetExists(updateSnippetDto.id.toLong())
             logger.info("Checking if the user can modify the snippet..")
             checkUserCanModify(userId, updateSnippetDto.id)
+            validateSnippet(updateSnippetDto.content) // validar contenido de snippet
             assetService.deleteSnippet(updateSnippetDto.id)
             saveSnippetOnAssetService(updateSnippetDto.id, updateSnippetDto.content, correlationId)
             GetSnippetDto.from(snippet, updateSnippetDto.content)
