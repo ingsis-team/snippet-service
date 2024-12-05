@@ -6,5 +6,5 @@ data class SnippetCreateDto(
     val content: String,
     val compliance: String,
     val extension: String,
-    val author: String
+    val username: String
 )

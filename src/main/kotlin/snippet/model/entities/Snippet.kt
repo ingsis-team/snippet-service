@@ -28,10 +28,13 @@ class Snippet {
     var author: String= " "
 
     @Column
+    var username: String= ""
+
+    @Column
     var content: String= " "
 
     companion object {
-        fun from(snippetDto: SnippetCreateDto,authorId: String): Snippet {
+        fun from(snippetDto: SnippetCreateDto,authorId: String, username:String): Snippet {
             val snippet = Snippet()
             snippet.name = snippetDto.name
             snippet.compliance = snippetDto.compliance
@@ -39,6 +42,7 @@ class Snippet {
             snippet.extension = snippetDto.extension
             snippet.author = authorId
             snippet.content = snippetDto.content
+            snippet.username = username
             return snippet
         }
     }

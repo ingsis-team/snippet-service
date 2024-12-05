@@ -37,11 +37,11 @@ constructor(
     private val logger = LoggerFactory.getLogger(SnippetService::class.java)
 
 
-    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String): Snippet {
+    fun createSnippet(snippetDto: SnippetCreateDto, correlationId: String, authorId: String, username: String): Snippet {
         logger.info("Creating snippet with correlationId: $correlationId and authorId: $authorId")
         try {
             validateSnippet(snippetDto.content) // valida sintaxis
-            val snippet = Snippet.from(snippetDto, authorId)
+            val snippet = Snippet.from(snippetDto, authorId, username)
             logger.info("Snippet created from DTO: $snippet")
             val savedSnippet = this.snippetRepository.save(snippet)
             logger.info("Snippet saved to repository with ID: ${savedSnippet.id}")
@@ -84,11 +84,11 @@ constructor(
     }
 
    fun getSnippets(
-        userId: String,
+        username: String,
         page: Int,
         size: Int,
     ): Page<GetSnippetDto> {
-        val resources = permissionService.getAlluserResources(userId)
+        val resources = permissionService.getAlluserResources(username)
         val context = snippetRepository.findAllById(resources.map { it.resourceId.toLong() })
         val snippets =
             context.map {
@@ -111,11 +111,11 @@ constructor(
     }
 
     fun getSnippetById(
-        userId: String,
+        username: String,
         snippetId: Long,
     ): GetSnippetDto {
         val context = snippetRepository.findById(snippetId).orElse(null) ?: throw ChangeSetPersister.NotFoundException()
-        val permission = permissionService.getAlluserResources(userId).filter { it.resourceId == snippetId.toString() }
+        val permission = permissionService.getAlluserResources(username).filter { it.resourceId == snippetId.toString() }
         if (permission.isEmpty()) throw PermissionDeniedException("User cannot acces this snippet")
         val content = assetService.getSnippet(snippetId.toString())
         return GetSnippetDto.from(context, content)
