@@ -1,6 +1,9 @@
 package snippet.controllers
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ServerWebExchange
 import snippet.model.dtos.printscript.ObjectRules
@@ -17,41 +20,45 @@ class PrintscriptController(
     @Autowired private val snippetService: SnippetService,
 ) {
 
+    private val logger = LoggerFactory.getLogger(PrintscriptController::class.java)
+
     @PutMapping("/format")
     fun formatOneSnippet(
-        @RequestParam userId: String,
+        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody snippetContext: SnippetContext,
     ): String {
         val uuid = UUID.randomUUID()
-        return snippetService.formatSnippet(userId, snippetContext.snippetId, snippetContext.language, uuid)
+        return snippetService.formatSnippet(jwt.subject, snippetContext.snippetId, snippetContext.language, uuid)
     }
 
     @GetMapping("/format-rules")
     fun getFormatRules(
-        @RequestParam userId: String,
-    ): List<Rule> = snippetService.getFormatRules(userId, UUID.randomUUID())
+        @AuthenticationPrincipal jwt: Jwt,
+    ): List<Rule> = snippetService.getFormatRules(jwt.subject, UUID.randomUUID())
 
     @GetMapping("/lint-rules")
     fun getLintRules(
-        @RequestParam userId: String,
-    ): List<Rule> = snippetService.getLintRules(userId, UUID.randomUUID())
+        @AuthenticationPrincipal jwt: Jwt,
+    ): List<Rule> = snippetService.getLintRules(jwt.subject, UUID.randomUUID())
 
     @PutMapping("/format-rules")
     fun changeFormatRules(
-        @RequestParam userId: String,
+        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody rules: ObjectRules,
     ): List<Rule> {
-        println("Changing format rules")
-        snippetService.changeFormatRules(userId, rules.rules, UUID.randomUUID())
+        logger.info("Changing format rules")
+        snippetService.changeFormatRules(jwt.subject, rules.rules, UUID.randomUUID())
+        logger.info("rule changes were completed successfully")
+
         return rules.rules
     }
 
     @PutMapping("/lint-rules")
     fun changeLinRules(
-        @RequestParam userId: String,
+        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody rules: ObjectRules,
     ): List<Rule> {
-        snippetService.changeFormatRules(userId, rules.rules, UUID.randomUUID())
+        snippetService.changeFormatRules(jwt.subject, rules.rules, UUID.randomUUID())
         return rules.rules
     }
 

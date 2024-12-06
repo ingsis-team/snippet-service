@@ -1,5 +1,6 @@
 package snippet.services
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
@@ -11,6 +12,9 @@ import java.util.*
 
 @Service
 class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
+
+
+    private val logger = LoggerFactory.getLogger(PrintscriptService::class.java)
 
 
     private val printscriptApi = WebClient.builder()
@@ -64,14 +68,25 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
             .bodyToMono(object : ParameterizedTypeReference<List<Rule>>() {})
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not get rules")
 
+
+
+
+
+
     fun changeFormatRules(
         userId: String,
         rules: List<Rule>,
         snippets: List<PrintscriptDataDTO>,
         correlationId: UUID
     ) {
+        logger.info("Starting changeFormatRules with userId: $userId, correlationId: $correlationId")
+        logger.debug("Rules: $rules")
+        logger.debug("Snippets: $snippets")
+
         try {
             val data = ChangeRulesDto(userId, rules, snippets, correlationId)
+            logger.info("Sending request to /redis/format with data: $data")
+
             printscriptApi
                 .put()
                 .uri("/redis/format")
@@ -79,8 +94,10 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
                 .retrieve()
                 .bodyToMono(Unit::class.java)
                 .block()
+
+            logger.info("Successfully changed format rules for userId: $userId")
         } catch (e: Exception) {
-            println(e.message)
+            logger.error("Error changing format rules for userId: $userId, message: ${e.message}")
         }
     }
 
