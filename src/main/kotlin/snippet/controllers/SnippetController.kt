@@ -101,8 +101,9 @@ class SnippetController @Autowired constructor(
         @AuthenticationPrincipal jwt: Jwt
     ): UserResourcePermission {
         logger.info("POST /snippets/share request received. User: ${jwt.subject}")
-        val userId = jwt.subject
-        return snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
+        val userId = jwt.subject // id de quien comparte
+
+        return snippetService.shareSnippet(userId, snippetFriend.friendUsername, snippetFriend.snippetId.toLong())
     }
 
     @GetMapping("users")

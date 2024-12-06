@@ -84,11 +84,11 @@ constructor(
     }
 
    fun getSnippets(
-        username: String,
+        authorId: String,
         page: Int,
         size: Int,
     ): Page<GetSnippetDto> {
-        val resources = permissionService.getAlluserResources(username)
+        val resources = permissionService.getAlluserResources(authorId)
         val context = snippetRepository.findAllById(resources.map { it.resourceId.toLong() })
         val snippets =
             context.map {
@@ -274,17 +274,6 @@ constructor(
             }
         printscriptService.changeFormatRules(userId, rules, snippets, correlationId)
     }
-
-
-
-
-
-
-
-
-
-
-
 
 }
 
