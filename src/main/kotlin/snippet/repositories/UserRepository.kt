@@ -6,7 +6,9 @@ import org.springframework.data.repository.query.Param
 import snippet.model.entities.User
 import java.util.Optional
 
-interface UserRepository : JpaRepository<User, String>{
+interface UserRepository : JpaRepository<User, String> {
     @Query("SELECT u.id FROM User u WHERE u.nickname = :nickname")
-    fun findIdByNickname(@Param("nickname") nickname: String): Optional<String>
+    fun findIdByNickname(
+        @Param("nickname") nickname: String,
+    ): Optional<String>
 }

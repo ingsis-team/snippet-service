@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -110,7 +109,11 @@ class SnippetController
             @RequestBody snippetFriend: ShareSnippetDTO,
             @AuthenticationPrincipal jwt: Jwt,
         ): ResponseEntity<UserResourcePermission> {
-            logger.info("Solicitud recibida para compartir snippet: snippetId=${snippetFriend.snippetId}, friendUsername=${snippetFriend.friendUsername}")
+            logger.info(
+                "Solicitud recibida para compartir snippet: " +
+                    "snippetId=${snippetFriend.snippetId}, " +
+                    "friendUsername=${snippetFriend.friendUsername}",
+            )
             return try {
                 val userId = jwt.subject ?: return ResponseEntity.status(401).build()
                 val response = snippetService.shareSnippet(userId, snippetFriend.friendUsername, snippetFriend.snippetId.toLong())
@@ -124,7 +127,7 @@ class SnippetController
             }
         }
 
-    @GetMapping("users")
+        @GetMapping("users")
         fun getUsers(
             @RequestParam pageNumber: Int,
             @RequestParam pageSize: Int,
@@ -132,5 +135,4 @@ class SnippetController
             logger.info("GET /snippets/users request received.")
             return snippetService.getUsers(pageNumber, pageSize)
         }
-
     }

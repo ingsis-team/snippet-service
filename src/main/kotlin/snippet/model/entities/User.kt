@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import org.jetbrains.annotations.NotNull
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 class User {
     @Id
     @NotNull

@@ -17,13 +17,12 @@ class UserController
     @Autowired
     constructor(
         private val userService: UserService,
-        ) {
-
+    ) {
         @PostMapping("/check-or-create")
         fun checkOrCreateUser(
             @RequestParam nickname: String,
             @AuthenticationPrincipal jwt: Jwt,
-            ): ResponseEntity<String> {
+        ): ResponseEntity<String> {
             return try {
                 val id = jwt.subject
                 if (!userService.nicknameExists(nickname)) {
@@ -39,7 +38,7 @@ class UserController
         fun nicknameExists(
             @RequestParam nickname: String,
             @AuthenticationPrincipal jwt: Jwt,
-            ): ResponseEntity<Boolean> {
+        ): ResponseEntity<Boolean> {
             return ResponseEntity.ok(userService.nicknameExists(nickname))
         }
     }

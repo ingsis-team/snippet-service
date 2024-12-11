@@ -11,7 +11,10 @@ class UserService
     constructor(
         private val userRepository: UserRepository,
     ) {
-        fun addUser(nickname: String, id: String): User {
+        fun addUser(
+            nickname: String,
+            id: String,
+        ): User {
             val user = User()
             user.nickname = nickname
             user.id = id
@@ -22,7 +25,7 @@ class UserService
             return userRepository.existsById(nickname)
         }
 
-        fun findIdByNickname(nickname: String): String{
+        fun findIdByNickname(nickname: String): String {
             return userRepository.findIdByNickname(nickname).get()
         }
     }

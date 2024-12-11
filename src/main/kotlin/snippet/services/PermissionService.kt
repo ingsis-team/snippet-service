@@ -1,5 +1,6 @@
 package snippet.services
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException
@@ -8,14 +9,12 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException.Unauthorized
 import org.springframework.web.reactive.function.client.WebClient
 import snippet.exceptions.PermissionDeniedException
+import snippet.model.dtos.permission.Permission
 import snippet.model.dtos.permission.PermissionResponse
 import snippet.model.dtos.permission.ResourcePermissionCreateDTO
+import snippet.model.dtos.permission.ShareResource
 import snippet.model.dtos.permission.UserResource
 import snippet.model.dtos.permission.UserResourcePermission
-import org.slf4j.LoggerFactory
-import snippet.model.dtos.permission.Permission
-import snippet.model.dtos.permission.ShareResource
-
 
 @Service
 class PermissionService(
@@ -94,12 +93,13 @@ class PermissionService(
         otherId: String,
     ): UserResourcePermission {
         logger.info("Sharing resource $resourceId from $userId to $otherId")
-        val shareDto = ShareResource(
-            selfId = userId,
-            otherId = otherId,
-            resourceId = resourceId,
-            permissions = mutableListOf(Permission.WRITE, Permission.READ) // Asegúrate de que Permission tenga valores válidos
-        )
+        val shareDto =
+            ShareResource(
+                selfId = userId,
+                otherId = otherId,
+                resourceId = resourceId,
+                permissions = mutableListOf(Permission.WRITE, Permission.READ),
+            )
         return permissionApi
             .post()
             .uri("/resource/share-resource")
