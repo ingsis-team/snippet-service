@@ -17,7 +17,7 @@ import java.util.UUID
 
 @Service
 class PrintscriptService(
-    @Value("\${printscript.url}") printscriptUrl: String,
+    @Value("\${PRINTSCRIPT_URL}") printscriptUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(PrintscriptService::class.java)
 
