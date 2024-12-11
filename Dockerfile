@@ -10,10 +10,21 @@ RUN apt-get update && apt-get install -y postgresql-client
 COPY . /home/gradle/src
 WORKDIR /home/gradle/src
 
-# Build the application, which will create the JAR file in the build/libs directory.
+ARG AUTH0_AUDIENCE
+ARG AUTH0_CLIENT_ID
+ARG AUTH0_CLIENT_SECRET
+ARG AUTH0_SERVER_URI
+
+ENV AUTH0_AUDIENCE=$AUTH0_AUDIENCE
+ENV AUTH0_CLIENT_ID=$AUTH0_CLIENT_ID
+ENV AUTH0_CLIENT_SECRET=$AUTH0_CLIENT_SECRET
+ENV AUTH0_SERVER_URI=$AUTH0_SERVER_URI
+
+
+
+
 RUN gradle assemble
 
-# Expose port 8080 so the application is accessible on this port.
 EXPOSE 8080
 
 # New Relic integration starts here
@@ -32,6 +43,4 @@ ADD ./newrelic-java/newrelic/newrelic.yml /usr/local/newrelic/newrelic.yml
 
 # New Relic integration ends here
 
-# Run the application using the Java command.
-# The -javaagent option specifies the path to the New Relic agent, enabling monitoring when the application runs.
 ENTRYPOINT ["java","-jar","-javaagent:/usr/local/newrelic/newrelic.jar","/home/gradle/src/build/libs/snippet-service-0.0.1-SNAPSHOT.jar"]
