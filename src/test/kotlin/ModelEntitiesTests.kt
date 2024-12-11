@@ -4,6 +4,7 @@ import snippet.model.dtos.snippet.SnippetCreateDto
 import snippet.model.dtos.testCase.TestCreateDTO
 import snippet.model.entities.Snippet
 import snippet.model.entities.SnippetTest
+import snippet.model.entities.User
 
 class ModelEntitiesTests {
     @Test
@@ -85,5 +86,24 @@ class ModelEntitiesTests {
         assertEquals(listOf("output1", "output2"), snippetTest.output)
         assertEquals(1L, snippetTest.snippetId)
         assertEquals("envVars1", snippetTest.envVars)
+    }
+
+    @Test
+    fun `test User entity creation`() {
+        val user = User().apply {
+            nickname = "testNickname"
+            id = "testId"
+        }
+
+        assertEquals("testNickname", user.nickname)
+        assertEquals("testId", user.id)
+    }
+
+    @Test
+    fun `test User entity default values`() {
+        val user = User()
+
+        assertEquals("", user.nickname)
+        assertEquals("", user.id)
     }
 }
