@@ -7,19 +7,24 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.server.ResponseStatusException
-import snippet.model.dtos.printscript.*
-import java.util.*
+import snippet.model.dtos.printscript.ChangeRulesDto
+import snippet.model.dtos.printscript.FormatFileDto
+import snippet.model.dtos.printscript.PrintscriptDataDTO
+import snippet.model.dtos.printscript.PrintscriptResponseDTO
+import snippet.model.dtos.printscript.Rule
+import snippet.model.dtos.printscript.ValidationResult
+import java.util.UUID
 
 @Service
-class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
-
-
+class PrintscriptService(
+    @Value("\${printscript.url}") printscriptUrl: String,
+) {
     private val logger = LoggerFactory.getLogger(PrintscriptService::class.java)
 
-
-    private val printscriptApi = WebClient.builder()
-        .baseUrl(validateAndFormatUrl(printscriptUrl))
-        .build()
+    private val printscriptApi =
+        WebClient.builder()
+            .baseUrl(validateAndFormatUrl(printscriptUrl))
+            .build()
 
     private fun validateAndFormatUrl(url: String): String {
         return if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -29,8 +34,7 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
         }
     }
 
-
-    fun validate(content:String):ValidationResult=
+    fun validate(content: String): ValidationResult =
         printscriptApi
             .post()
             .uri("/validate")
@@ -38,8 +42,6 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
             .retrieve()
             .bodyToMono(ValidationResult::class.java)
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not validate snippet")
-
-
 
     fun formatSnippet(data: FormatFileDto): PrintscriptResponseDTO =
         printscriptApi
@@ -50,7 +52,10 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
             .bodyToMono(PrintscriptResponseDTO::class.java)
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not format correctly")
 
-    fun getFormatRules(userId: String, correlationId: UUID): List<Rule> =
+    fun getFormatRules(
+        userId: String,
+        correlationId: UUID,
+    ): List<Rule> =
         printscriptApi
             .get()
             .uri("/format/$userId")
@@ -59,7 +64,10 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
             .bodyToMono(object : ParameterizedTypeReference<List<Rule>>() {})
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not get rules")
 
-    fun getLintRules(userId: String, correlationId: UUID): List<Rule> =
+    fun getLintRules(
+        userId: String,
+        correlationId: UUID,
+    ): List<Rule> =
         printscriptApi
             .get()
             .uri("/lint/$userId")
@@ -68,16 +76,11 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
             .bodyToMono(object : ParameterizedTypeReference<List<Rule>>() {})
             .block() ?: throw ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Could not get rules")
 
-
-
-
-
-
     fun changeFormatRules(
         userId: String,
         rules: List<Rule>,
         snippets: List<PrintscriptDataDTO>,
-        correlationId: UUID
+        correlationId: UUID,
     ) {
         logger.info("Starting changeFormatRules with userId: $userId, correlationId: $correlationId")
         logger.debug("Rules: $rules")
@@ -105,7 +108,7 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
         userId: String,
         rules: List<Rule>,
         snippets: List<PrintscriptDataDTO>,
-        correlationId: UUID
+        correlationId: UUID,
     ) {
         try {
             val data = ChangeRulesDto(userId, rules, snippets, correlationId)
@@ -125,7 +128,7 @@ class PrintscriptService(@Value("\${printscript.url}") printscriptUrl: String) {
         snippet: String,
         input: String,
         output: List<String>,
-        envVars: String
+        envVars: String,
     ): String =
         printscriptApi
             .post()

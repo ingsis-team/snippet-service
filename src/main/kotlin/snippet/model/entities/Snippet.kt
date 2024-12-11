@@ -1,6 +1,11 @@
 package snippet.model.entities
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.SequenceGenerator
 import org.jetbrains.annotations.NotNull
 import snippet.model.dtos.snippet.SnippetCreateDto
 
@@ -25,16 +30,20 @@ class Snippet {
     var extension: String = ""
 
     @Column
-    var author: String= " "
+    var author: String = " "
 
     @Column
-    var username: String= ""
+    var username: String = ""
 
     @Column
-    var content: String= " "
+    var content: String = " "
 
     companion object {
-        fun from(snippetDto: SnippetCreateDto,authorId: String, username:String): Snippet {
+        fun from(
+            snippetDto: SnippetCreateDto,
+            authorId: String,
+            username: String,
+        ): Snippet {
             val snippet = Snippet()
             snippet.name = snippetDto.name
             snippet.compliance = snippetDto.compliance

@@ -13,16 +13,14 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
-
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
 class SecurityConfiguration(
     @Value("\${AUTH0_AUDIENCE}") private val audience: String,
-    @Value("\${AUTH_SERVER_URI}") private val issuer: String,
+    @Value("\${AUTH0_SERVER_URI}") private val issuer: String,
 ) {
-
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests {
@@ -34,19 +32,19 @@ class SecurityConfiguration(
                 .anyRequest().authenticated() // Require authentication for other requests
         }
             .oauth2ResourceServer { it.jwt(withDefaults()) }
-
-            .cors { it.configurationSource {
-                val cors = org.springframework.web.cors.CorsConfiguration()
-                cors.allowedOrigins = listOf("http://localhost:5173")
-                cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                cors.allowedHeaders = listOf("*")
-                cors.allowCredentials = true
-                cors
-            } }
+            .cors {
+                it.configurationSource {
+                    val cors = org.springframework.web.cors.CorsConfiguration()
+                    cors.allowedOrigins = listOf("http://localhost:5173")
+                    cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    cors.allowedHeaders = listOf("*")
+                    cors.allowCredentials = true
+                    cors
+                }
+            }
             .csrf { it.disable() }
         return http.build()
     }
-
 
     @Bean
     fun jwtDecoder(): JwtDecoder {
@@ -57,17 +55,4 @@ class SecurityConfiguration(
         jwtDecoder.setJwtValidator(withAudience)
         return jwtDecoder
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
