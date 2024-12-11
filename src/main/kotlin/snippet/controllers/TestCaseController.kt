@@ -1,7 +1,6 @@
 package snippet.controllers
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -14,7 +13,6 @@ import snippet.model.dtos.testCase.TestCreateDTO
 import snippet.model.entities.SnippetTest
 import snippet.services.TestCaseService
 
-@CrossOrigin(origins = ["*"], allowedHeaders = ["*"])
 @RestController
 @RequestMapping("/test-case")
 class TestCaseController(

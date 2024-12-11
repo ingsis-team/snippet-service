@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -29,7 +28,6 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/snippets")
-@CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
 class SnippetController
     @Autowired
     constructor(
@@ -110,11 +108,23 @@ class SnippetController
         fun shareSnippet(
             @RequestBody snippetFriend: ShareSnippetDTO,
             @AuthenticationPrincipal jwt: Jwt,
-        ): UserResourcePermission {
-            logger.info("POST /snippets/share request received. User: ${jwt.subject}")
-            val userId = jwt.subject // id de quien comparte
-
-            return snippetService.shareSnippet(userId, snippetFriend.friendUsername, snippetFriend.snippetId.toLong())
+        ): ResponseEntity<UserResourcePermission> {
+            logger.info(
+                "Solicitud recibida para compartir snippet: " +
+                    "snippetId=${snippetFriend.snippetId}, " +
+                    "friendUsername=${snippetFriend.friendUsername}",
+            )
+            return try {
+                val userId = jwt.subject ?: return ResponseEntity.status(401).build()
+                val response = snippetService.shareSnippet(userId, snippetFriend.friendUsername, snippetFriend.snippetId.toLong())
+                ResponseEntity.ok(response)
+            } catch (e: ResponseStatusException) {
+                logger.error("Error al compartir snippet: ${e.reason}")
+                ResponseEntity.status(e.statusCode).body(null)
+            } catch (e: Exception) {
+                logger.error("Error inesperado al compartir snippet", e)
+                ResponseEntity.status(500).body(null)
+            }
         }
 
         @GetMapping("users")
@@ -124,31 +134,5 @@ class SnippetController
         ): Page<String> {
             logger.info("GET /snippets/users request received.")
             return snippetService.getUsers(pageNumber, pageSize)
-        }
-
-        @GetMapping("/auth0/users")
-        fun getAuth0Users(
-            @RequestParam page: Int,
-            @RequestParam perPage: Int,
-        ): ResponseEntity<List<Map<String, Any>>> {
-            logger.info("GET /snippets/auth0/users request received.")
-            return try {
-                val users = auth0Service.getUsers(page, perPage)
-                ResponseEntity.ok(users)
-            } catch (e: Exception) {
-                logger.error("Error fetching users from Auth0: ${e.message}")
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emptyList())
-            }
-        }
-
-        @GetMapping("/auth0/all-users")
-        fun getAllAuth0Users(): ResponseEntity<List<Map<String, Any>>> {
-            return try {
-                val users = auth0Service.getAllUsers()
-                ResponseEntity.ok(users)
-            } catch (e: Exception) {
-                logger.error("Error fetching all users from Auth0: ${e.message}")
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emptyList())
-            }
         }
     }

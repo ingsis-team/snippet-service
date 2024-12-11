@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono
 
 @Service
 class AssetService(
-    @Value("\${asset.url}") assetUrl: String,
+    @Value("\${ASSET_URL}") assetUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(AssetService::class.java)
     var assetServiceApi = WebClient.builder().baseUrl("http://$assetUrl/v1/asset").build()
