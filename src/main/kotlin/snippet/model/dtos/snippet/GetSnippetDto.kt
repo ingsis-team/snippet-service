@@ -9,6 +9,8 @@ data class GetSnippetDto(
     val content: String,
     val compliance: String,
     val extension: String,
+    val author: String,
+    val username: String,
 ) {
     companion object {
         fun from(
@@ -22,6 +24,8 @@ data class GetSnippetDto(
                 content,
                 snippet.compliance,
                 snippet.extension,
+                snippet.author,
+                snippet.username,
             )
         }
     }

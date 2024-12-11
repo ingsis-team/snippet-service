@@ -7,107 +7,148 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import snippet.model.dtos.permission.UserResourcePermission
 import snippet.model.dtos.snippet.GetSnippetDto
 import snippet.model.dtos.snippet.ShareSnippetDTO
 import snippet.model.dtos.snippet.SnippetCreateDto
 import snippet.model.dtos.snippet.UpdateSnippetDto
-import snippet.model.entities.Snippet
 import snippet.security.JwtUtil
+import snippet.services.Auth0Service
 import snippet.services.SnippetService
-import java.util.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/snippets")
 @CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
-
-class SnippetController @Autowired constructor(
-    private val snippetService: SnippetService,private val jwtUtil: JwtUtil ) {
-
-    private val logger = LoggerFactory.getLogger(SnippetController::class.java)
-
-    @PostMapping()
-    fun createSnippet(
-        @RequestBody snippetData: SnippetCreateDto,
-        @AuthenticationPrincipal jwt: Jwt
-    ): ResponseEntity<Any> {
-        return try{
-        logger.info("POST /snippets request received. User: ${jwt.subject}")
-        val correlationId = UUID.randomUUID().toString()
-        val snippet =  snippetService.createSnippet(snippetData, correlationId, jwt.subject)
-        ResponseEntity.ok(snippet)}
-        catch (e: ResponseStatusException){
-            ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))
-        }
-    }
-
-    @GetMapping()
-    fun getSnippets(
-        @RequestParam pageNumber: Int,
-        @RequestParam pageSize: Int,
-        @AuthenticationPrincipal jwt: Jwt?
-    ): Page<GetSnippetDto>? {
-        logger.info("GET /snippets request received. User: ${jwt?.subject}")
-        val userId = jwt?.subject
-        return userId?.let { snippetService.getSnippets(it, pageNumber, pageSize) }
-    }
-
-    @GetMapping("/byId")
-    fun getSnippetById(
-        @RequestParam snippetId: String,
-        @AuthenticationPrincipal jwt: Jwt
-    ): GetSnippetDto {
-        logger.info("GET /snippets/byId request received. User: ${jwt.subject}, SnippetId: $snippetId")
-        val userId = jwt.subject
-        return snippetService.getSnippetById(userId, snippetId.toLong())
-    }
-
-    @PutMapping()
-    fun updateSnippet(
-        @RequestBody updateSnippetDto: UpdateSnippetDto,
-        @AuthenticationPrincipal jwt: Jwt
-    ): ResponseEntity<Any> {
-        logger.info("JSON recibido: id=${updateSnippetDto.id}, content=${updateSnippetDto.content}")
-        logger.info("PUT /snippets request received. User: ${jwt.subject}")
-        return try {
-            logger.info("Request body: $updateSnippetDto")
-            val correlationId = UUID.randomUUID().toString()
-            val updatedSnippet = snippetService.updateSnippet(jwt.subject, updateSnippetDto, correlationId)
-            ResponseEntity.ok(updatedSnippet)
-        } catch (e: Exception) {
-            logger.error("Error updating snippet: ${e.message}")
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Error updating snippet: ${e.message}"))
-        }
-    }
-
-    @DeleteMapping("")
-    fun deleteSnippet(
-        @RequestParam snippetId: String,
-        @AuthenticationPrincipal jwt: Jwt
+class SnippetController
+    @Autowired
+    constructor(
+        private val snippetService: SnippetService,
+        private val auth0Service: Auth0Service,
+        private val jwtUtil: JwtUtil,
     ) {
-        logger.info("DELETE /snippets request received. User: ${jwt.subject}, SnippetId: $snippetId")
-        val userId = jwt.subject
-        snippetService.deleteSnippet(userId, snippetId.toLong())
-    }
+        private val logger = LoggerFactory.getLogger(SnippetController::class.java)
 
-    @PostMapping("/share")
-    fun shareSnippet(
-        @RequestBody snippetFriend: ShareSnippetDTO,
-        @AuthenticationPrincipal jwt: Jwt
-    ): UserResourcePermission {
-        logger.info("POST /snippets/share request received. User: ${jwt.subject}")
-        val userId = jwt.subject
-        return snippetService.shareSnippet(userId, snippetFriend.friendId, snippetFriend.snippetId.toLong())
-    }
+        @PostMapping()
+        fun createSnippet(
+            @RequestBody snippetData: SnippetCreateDto,
+            @AuthenticationPrincipal jwt: Jwt,
+        ): ResponseEntity<Any> {
+            return try {
+                logger.info("POST /snippets request received. User: ${jwt.subject}")
+                val correlationId = UUID.randomUUID().toString()
+                val snippet = snippetService.createSnippet(snippetData, correlationId, jwt.subject, snippetData.username)
+                ResponseEntity.ok(snippet)
+            } catch (e: ResponseStatusException) {
+                ResponseEntity.status(e.statusCode).body(mapOf("error" to e.reason))
+            } catch (e: Exception) {
+                logger.error("Unexpected error during snippet creation: ${e.message}", e)
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to e.message))
+            }
+        }
 
-    @GetMapping("users")
-    fun getUsers(
-        @RequestParam pageNumber: Int,
-        @RequestParam pageSize: Int,
-    ): Page<String> {
-        logger.info("GET /snippets/users request received.")
-        return snippetService.getUsers(pageNumber, pageSize)
+        @GetMapping()
+        fun getSnippets(
+            @RequestParam pageNumber: Int,
+            @RequestParam pageSize: Int,
+            @AuthenticationPrincipal jwt: Jwt?,
+        ): Page<GetSnippetDto>? {
+            logger.info("GET /snippets request received. User: ${jwt?.subject}")
+            val userId = jwt?.subject
+            return userId?.let { snippetService.getSnippets(it, pageNumber, pageSize) }
+        }
+
+        @GetMapping("/byId")
+        fun getSnippetById(
+            @RequestParam snippetId: String,
+            @AuthenticationPrincipal jwt: Jwt,
+        ): GetSnippetDto {
+            logger.info("GET /snippets/byId request received. User: ${jwt.subject}, SnippetId: $snippetId")
+            val userId = jwt.subject
+            return snippetService.getSnippetById(userId, snippetId.toLong())
+        }
+
+        @PutMapping()
+        fun updateSnippet(
+            @RequestBody updateSnippetDto: UpdateSnippetDto,
+            @AuthenticationPrincipal jwt: Jwt,
+        ): ResponseEntity<Any> {
+            logger.info("JSON recibido: id=${updateSnippetDto.id}, content=${updateSnippetDto.content}")
+            logger.info("PUT /snippets request received. User: ${jwt.subject}")
+            return try {
+                logger.info("Request body: $updateSnippetDto")
+                val correlationId = UUID.randomUUID().toString()
+                val updatedSnippet = snippetService.updateSnippet(jwt.subject, updateSnippetDto, correlationId)
+                ResponseEntity.ok(updatedSnippet)
+            } catch (e: Exception) {
+                logger.error("Error updating snippet: ${e.message}")
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf("error" to "Error updating snippet: ${e.message}"))
+            }
+        }
+
+        @DeleteMapping("")
+        fun deleteSnippet(
+            @RequestParam snippetId: String,
+            @AuthenticationPrincipal jwt: Jwt,
+        ) {
+            logger.info("DELETE /snippets request received. User: ${jwt.subject}, SnippetId: $snippetId")
+            val userId = jwt.subject
+            snippetService.deleteSnippet(userId, snippetId.toLong())
+        }
+
+        @PostMapping("/share")
+        fun shareSnippet(
+            @RequestBody snippetFriend: ShareSnippetDTO,
+            @AuthenticationPrincipal jwt: Jwt,
+        ): UserResourcePermission {
+            logger.info("POST /snippets/share request received. User: ${jwt.subject}")
+            val userId = jwt.subject // id de quien comparte
+
+            return snippetService.shareSnippet(userId, snippetFriend.friendUsername, snippetFriend.snippetId.toLong())
+        }
+
+        @GetMapping("users")
+        fun getUsers(
+            @RequestParam pageNumber: Int,
+            @RequestParam pageSize: Int,
+        ): Page<String> {
+            logger.info("GET /snippets/users request received.")
+            return snippetService.getUsers(pageNumber, pageSize)
+        }
+
+        @GetMapping("/auth0/users")
+        fun getAuth0Users(
+            @RequestParam page: Int,
+            @RequestParam perPage: Int,
+        ): ResponseEntity<List<Map<String, Any>>> {
+            logger.info("GET /snippets/auth0/users request received.")
+            return try {
+                val users = auth0Service.getUsers(page, perPage)
+                ResponseEntity.ok(users)
+            } catch (e: Exception) {
+                logger.error("Error fetching users from Auth0: ${e.message}")
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emptyList())
+            }
+        }
+
+        @GetMapping("/auth0/all-users")
+        fun getAllAuth0Users(): ResponseEntity<List<Map<String, Any>>> {
+            return try {
+                val users = auth0Service.getAllUsers()
+                ResponseEntity.ok(users)
+            } catch (e: Exception) {
+                logger.error("Error fetching all users from Auth0: ${e.message}")
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(emptyList())
+            }
+        }
     }
-}

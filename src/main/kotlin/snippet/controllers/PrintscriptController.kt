@@ -4,7 +4,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ServerWebExchange
 import snippet.model.dtos.printscript.ObjectRules
 import snippet.model.dtos.printscript.Rule
@@ -12,14 +16,13 @@ import snippet.model.dtos.snippet.SnippetContext
 import snippet.model.dtos.snippet.UpdateSnippetDto
 import snippet.server.CorrelationIdFilter
 import snippet.services.SnippetService
-import java.util.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/run")
 class PrintscriptController(
     @Autowired private val snippetService: SnippetService,
 ) {
-
     private val logger = LoggerFactory.getLogger(PrintscriptController::class.java)
 
     @PutMapping("/format")
@@ -70,27 +73,4 @@ class PrintscriptController(
         val correlationId = exchange.getAttribute<String>(CorrelationIdFilter.CORRELATION_ID_KEY) ?: "default-correlation-id"
         snippetService.updateFormattedLintedSnippet(snippet.id.toLong(), snippet.content, correlationId)
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

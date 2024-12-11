@@ -1,6 +1,6 @@
 package snippet.model.dtos.printscript
 
-import java.util.*
+import java.util.UUID
 
 data class ChangeRulesDto(
     val userId: String,
