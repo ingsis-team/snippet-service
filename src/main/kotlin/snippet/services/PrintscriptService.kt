@@ -21,7 +21,7 @@ class PrintscriptService(
 ) {
     private val logger = LoggerFactory.getLogger(PrintscriptService::class.java)
 
-    private val printscriptApi =
+    var printscriptApi =
         WebClient.builder()
             .baseUrl(validateAndFormatUrl(printscriptUrl))
             .build()

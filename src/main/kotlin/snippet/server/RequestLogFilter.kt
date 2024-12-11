@@ -10,7 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 @Order(2)
 class RequestLogFilter : OncePerRequestFilter() {
-    override fun doFilterInternal(
+    public override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain,

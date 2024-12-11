@@ -18,7 +18,7 @@ class Auth0Service(
     @Value("\${AUTH0_CLIENT_SECRET}") private val clientSecret: String,
 ) {
     private val logger = LoggerFactory.getLogger(Auth0Service::class.java)
-    private val restTemplate = RestTemplate()
+    var restTemplate = RestTemplate()
 
     fun getAccessToken(): String {
         val restTemplate = RestTemplate()
@@ -46,6 +46,7 @@ class Auth0Service(
         return token ?: throw RuntimeException("Failed to get access token")
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun getUsers(
         page: Int,
         perPage: Int,
@@ -64,7 +65,6 @@ class Auth0Service(
                 HttpEntity<Any>(headers),
                 List::class.java,
             )
-
         return response.body as List<Map<String, Any>>? ?: emptyList()
     }
 
