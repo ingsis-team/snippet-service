@@ -29,7 +29,6 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/snippets")
-@CrossOrigin(origins = ["http://localhost:5173"], allowedHeaders = ["Authorization", "Content-Type", "ngrok-skip-browser-warning"])
 class SnippetController
     @Autowired
     constructor(

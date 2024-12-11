@@ -13,11 +13,16 @@ services:
       DB_NAME: ${POSTGRES_DB}
       DB_HOST: snippet-db
       DB_PORT: ${DB_PORT}
+      PRINTSCRIPT_URL: ${PRINTSCRIPT_URL}
+      ASSET_URL: ${ASSET_URL}
+      PERMISSION_URL: ${PERMISSION_URL}
+
+
 
     depends_on:
       db:
         condition: service_healthy
- 
+
   db:
     container_name: "snippet-db"
     image: postgres:12

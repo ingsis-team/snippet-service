@@ -15,7 +15,7 @@ import snippet.model.dtos.permission.UserResourcePermission
 
 @Service
 class PermissionService(
-    @Value("\${permission.url}") permissionUrl: String,
+    @Value("\${PERMISSION_URL}") permissionUrl: String,
 ) {
     private val permissionApi = WebClient.builder().baseUrl("http://$permissionUrl").build()
 

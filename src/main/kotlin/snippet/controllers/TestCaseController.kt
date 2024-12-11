@@ -14,7 +14,6 @@ import snippet.model.dtos.testCase.TestCreateDTO
 import snippet.model.entities.SnippetTest
 import snippet.services.TestCaseService
 
-@CrossOrigin(origins = ["*"], allowedHeaders = ["*"])
 @RestController
 @RequestMapping("/test-case")
 class TestCaseController(
