@@ -22,6 +22,7 @@ import snippet.services.AssetService
 import snippet.services.PermissionService
 import snippet.services.PrintscriptService
 import snippet.services.SnippetService
+import snippet.services.UserService
 import java.util.Optional
 
 class SnippetServiceTests {
@@ -30,6 +31,7 @@ class SnippetServiceTests {
     private lateinit var assetServiceMock: AssetService
     private lateinit var permissionServiceMock: PermissionService
     private lateinit var printscriptServiceMock: PrintscriptService
+    private lateinit var userServiceMock: UserService
 
     @BeforeEach
     fun setUp() {
@@ -37,8 +39,13 @@ class SnippetServiceTests {
         assetServiceMock = mock(AssetService::class.java)
         permissionServiceMock = mock(PermissionService::class.java)
         printscriptServiceMock = mock(PrintscriptService::class.java)
+        userServiceMock = mock(UserService::class.java)
 
-        snippetService = SnippetService(snippetRepositoryMock, assetServiceMock, permissionServiceMock, printscriptServiceMock)
+        snippetService =
+            SnippetService(
+                snippetRepositoryMock, assetServiceMock, permissionServiceMock,
+                printscriptServiceMock, userServiceMock,
+            )
     }
 /*
     @Test
