@@ -14,10 +14,10 @@ import java.util.UUID
 class CorrelationIdFilter : OncePerRequestFilter() {
     companion object {
         const val CORRELATION_ID_KEY = "correlation-id"
-        private const val CORRELATION_ID_HEADER = "X-Correlation-Id"
+        const val CORRELATION_ID_HEADER = "X-Correlation-Id"
     }
 
-    override fun doFilterInternal(
+    public override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain,

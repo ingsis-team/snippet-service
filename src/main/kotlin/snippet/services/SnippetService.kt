@@ -32,6 +32,7 @@ class SnippetService
         val assetService: AssetService,
         val permissionService: PermissionService,
         val printscriptService: PrintscriptService,
+        private val userService: UserService,
     ) {
         private val logger = LoggerFactory.getLogger(SnippetService::class.java)
 
@@ -185,9 +186,44 @@ class SnippetService
 
         fun shareSnippet(
             authorId: String,
-            friendId: String,
+            friendUsername: String,
             snippetId: Long,
-        ): UserResourcePermission = permissionService.shareResource(authorId, snippetId.toString(), friendId)
+        ): UserResourcePermission {
+            logger.info("Sharing snippet $snippetId from $authorId to $friendUsername")
+
+            // Verifica la existencia del snippet
+            val snippet =
+                snippetRepository.findById(snippetId).orElseThrow {
+                    ResponseStatusException(HttpStatus.NOT_FOUND, "Snippet not found")
+                }
+            logger.info("Snippet encontrado: ${snippet.name}")
+
+            // Verifica si el autor coincide
+            if (snippet.author != authorId) {
+                logger.error("El autor no coincide: esperado ${snippet.author}, recibido $authorId")
+                throw ResponseStatusException(HttpStatus.FORBIDDEN, "Only the author can share this snippet")
+            }
+
+            // Verifica si existe el username
+            if (!userService.nicknameExists(friendUsername)) {
+                logger.error("Usuario amigo no encontrado: $friendUsername")
+                throw ResponseStatusException(HttpStatus.NOT_FOUND, "Friend username not found")
+            }
+
+            // Busca el ID del usuario amigo
+            val friendId = userService.findIdByNickname(friendUsername)
+            logger.info("ID del amigo encontrado: $friendId")
+
+            // Intenta compartir el recurso
+            try {
+                val result = permissionService.shareResource(authorId, snippetId.toString(), friendId)
+                logger.info("Snippet compartido con éxito: $result")
+                return result
+            } catch (ex: Exception) {
+                logger.error("Error al compartir el snippet", ex)
+                throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while sharing snippet")
+            }
+        }
 
         fun getUsers(
             pageNumber: Int,
