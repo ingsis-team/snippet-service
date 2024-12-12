@@ -16,8 +16,7 @@ services:
       PRINTSCRIPT_URL: ${PRINTSCRIPT_URL}
       ASSET_URL: ${ASSET_URL}
       PERMISSION_URL: ${PERMISSION_URL}
-
-
+      FRONTEND_URL: ${FRONTEND_URL}
 
     depends_on:
       db:

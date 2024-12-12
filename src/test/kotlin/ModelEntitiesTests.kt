@@ -90,10 +90,11 @@ class ModelEntitiesTests {
 
     @Test
     fun `test User entity creation`() {
-        val user = User().apply {
-            nickname = "testNickname"
-            id = "testId"
-        }
+        val user =
+            User().apply {
+                nickname = "testNickname"
+                id = "testId"
+            }
 
         assertEquals("testNickname", user.nickname)
         assertEquals("testId", user.id)
