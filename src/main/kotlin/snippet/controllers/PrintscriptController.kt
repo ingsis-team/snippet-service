@@ -61,7 +61,7 @@ class PrintscriptController(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestBody rules: ObjectRules,
     ): List<Rule> {
-        snippetService.changeFormatRules(jwt.subject, rules.rules, UUID.randomUUID())
+        snippetService.changeLintRules(jwt.subject, rules.rules, UUID.randomUUID())
         return rules.rules
     }
 

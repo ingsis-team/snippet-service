@@ -12,12 +12,16 @@ import snippet.model.dtos.permission.PermissionResponse
 import snippet.model.dtos.permission.ResourcePermissionCreateDTO
 import snippet.model.dtos.permission.UserResource
 import snippet.model.dtos.permission.UserResourcePermission
+import org.slf4j.LoggerFactory
+import snippet.model.dtos.permission.Permission
+import snippet.model.dtos.permission.ShareResource
 
 @Service
 class PermissionService(
     @Value("\${permission.url}") permissionUrl: String,
 ) {
     var permissionApi = WebClient.builder().baseUrl("http://$permissionUrl").build()
+    private val logger = LoggerFactory.getLogger(SnippetService::class.java)
 
     fun createResourcePermission(
         resourceData: ResourcePermissionCreateDTO,
@@ -88,7 +92,14 @@ class PermissionService(
         resourceId: String,
         otherId: String,
     ): UserResourcePermission {
-        val shareDto = shareResource(userId, otherId, resourceId)
+        logger.info("Sharing resource $resourceId from $userId to $otherId")
+        val shareDto =
+            ShareResource(
+                selfId = userId,
+                otherId = otherId,
+                resourceId = resourceId,
+                permissions = mutableListOf(Permission.WRITE, Permission.READ),
+            )
         return permissionApi
             .post()
             .uri("/resource/share-resource")
