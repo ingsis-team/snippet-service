@@ -109,6 +109,9 @@ class SnippetService
                     val content = assetService.getSnippet(it.id.toString())
                     GetSnippetDto.from(it, content)
                 }
+
+            logger.info("El contenido de snippets es $snippets")
+
             return toPageable(snippets, page, size)
         }
 

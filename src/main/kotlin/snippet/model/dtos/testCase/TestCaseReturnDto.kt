@@ -16,7 +16,6 @@ class TestCaseReturnDto {
             testCase1.input = testCase.input
             testCase1.output = testCase.output
             testCase1.name = testCase.name
-            testCase1.envVars = testCase.envVars
             return testCase1
         }
     }

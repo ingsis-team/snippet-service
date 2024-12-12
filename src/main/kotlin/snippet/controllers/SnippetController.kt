@@ -59,11 +59,10 @@ class SnippetController
         fun getSnippets(
             @RequestParam pageNumber: Int,
             @RequestParam pageSize: Int,
-            @AuthenticationPrincipal jwt: Jwt?,
+            @AuthenticationPrincipal jwt: Jwt,
         ): Page<GetSnippetDto>? {
             logger.info("GET /snippets request received. User: ${jwt?.subject}")
-            val userId = jwt?.subject
-            return userId?.let { snippetService.getSnippets(it, pageNumber, pageSize) }
+            return snippetService.getSnippets(jwt.subject, pageNumber, pageSize)
         }
 
         @GetMapping("/byId")

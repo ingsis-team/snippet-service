@@ -1,9 +1,12 @@
 package snippet.services
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import snippet.model.dtos.testCase.TestCaseReturnDto
 import snippet.model.dtos.testCase.TestCreateDTO
+import snippet.model.dtos.testCase.TestDataReceive
+import snippet.model.dtos.testCase.TestDataResponse
 import snippet.model.entities.SnippetTest
 import snippet.repositories.TestCaseRepository
 
@@ -15,34 +18,41 @@ class TestCaseService
         private val printscriptService: PrintscriptService,
         private val assetService: AssetService,
     ) {
-        fun createTestCase(testCaseCreateDto: TestCreateDTO): SnippetTest {
-            val testCase = SnippetTest.from(testCaseCreateDto)
+        private val logger = LoggerFactory.getLogger(TestCaseService::class.java)
+
+
+
+        fun createTestCase(testCaseCreateDto: TestDataReceive, userId:String): TestDataResponse {
+            val testCase = SnippetTest.from(testCaseCreateDto, userId)
             this.testCaseRepository.save(testCase)
-            return testCase
+            val testResponse = TestDataResponse.from(testCase)
+
+
+            return testResponse
         }
 
         fun deleteTestCase(testId: Long) {
             this.testCaseRepository.deleteById(testId)
         }
 
-        fun getTestCase(snippetId: Long): List<TestCaseReturnDto> {
+        fun getTestCase(snippetId: Long): List<TestDataResponse> {
             var testCasedtos: MutableList<SnippetTest> = this.testCaseRepository.findBySnippetId(snippetId)
-            return testCasedtos.map { TestCaseReturnDto.from(it) }
+            return testCasedtos.map { TestDataResponse.from(it) }
         }
 
         fun runTestCase(
             testCaseId: Long,
             envVars: String,
         ): String {
-            println("1$testCaseId")
+            logger.info("1$testCaseId")
             val testCase: SnippetTest = this.testCaseRepository.findById(testCaseId).get()
-            println("2,$testCase")
+            logger.info("2,$testCase")
             val snippetId: Long = testCase.snippetId
-            println("3,$snippetId")
+            logger.info("3,$snippetId")
             val snippetContent: String = assetService.getSnippet(snippetId.toString())
-            print(snippetContent)
-            print(testCase.input)
-            print(testCase.output)
+            logger.info(snippetContent)
+            logger.info("TestCase input: ${testCase.input}")
+            logger.info("TestCas output: ${testCase.output}")
             return printscriptService.runTest(snippetContent, testCase.input.toString(), testCase.output, envVars)
         }
     }

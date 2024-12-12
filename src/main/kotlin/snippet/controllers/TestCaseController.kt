@@ -1,6 +1,8 @@
 package snippet.controllers
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import snippet.model.dtos.testCase.TestCaseReturnDto
 import snippet.model.dtos.testCase.TestCreateDTO
+import snippet.model.dtos.testCase.TestDataReceive
+import snippet.model.dtos.testCase.TestDataResponse
 import snippet.model.entities.SnippetTest
 import snippet.services.TestCaseService
 
@@ -20,9 +24,10 @@ class TestCaseController(
 ) {
     @PostMapping
     fun createTestCase(
-        @RequestBody testCaseCreateDto: TestCreateDTO,
-    ): SnippetTest {
-        return testCaseService.createTestCase(testCaseCreateDto)
+        @RequestBody testCaseCreateDto: TestDataReceive,
+        @AuthenticationPrincipal jwt: Jwt
+    ): TestDataResponse {
+        return testCaseService.createTestCase(testCaseCreateDto, jwt.subject)
     }
 
     @DeleteMapping
@@ -35,7 +40,7 @@ class TestCaseController(
     @GetMapping
     fun getTestCases(
         @RequestParam snippetId: Long,
-    ): List<TestCaseReturnDto> {
+    ): List<TestDataResponse> {
         return testCaseService.getTestCase(snippetId)
     }
 
